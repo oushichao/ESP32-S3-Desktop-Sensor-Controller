@@ -19,7 +19,6 @@
 
 EventGroupHandle_t   wifi_ev;   //确保wifi连接再连接mqtt
 static uint8_t retry_count=0;
-const char* TAG="WIFI_STA_DEMO:" ;
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                                int32_t event_id, void* event_data){
@@ -43,7 +42,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                 }
                 break;
             case    WIFI_EVENT_STA_CONNECTED:
-                ESP_LOGI(TAG,"WIFI连接成功!!!!");
+                ESP_LOGI(TAG,"WIFI连接成功!!!");
                 break;
             default:    
                 break;    
@@ -67,23 +66,16 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 
 void Wifi_Sta_Init(){
     wifi_ev=xEventGroupCreate();
-    vTaskDelay(pdMS_TO_TICKS(3000));
     retry_count=0;
 // ===================== 第一部分：前置必选初始化（步骤1-3）======================
-    ESP_ERROR_CHECK(nvs_flash_init());                  //初始化NVS
-    ESP_LOGI(TAG,"步骤1:NVS初始化完成");
-    ESP_ERROR_CHECK(esp_netif_init());                  //初始化TCP/IP协议栈
-    ESP_LOGI(TAG,"步骤2:LWIP初始化完成"); 
-    ESP_ERROR_CHECK(esp_event_loop_create_default());   //初始化循环事件组
-    ESP_LOGI(TAG,"步骤3:循环事件组初始化完成");
+    ESP_ERROR_CHECK(nvs_flash_init());                          //初始化NVS
+    ESP_ERROR_CHECK(esp_netif_init());                          //初始化TCP/IP协议栈
+    ESP_ERROR_CHECK(esp_event_loop_create_default());           //初始化循环事件组
 // ===================== 第二部分：WiFi核心通用初始化（步骤4-7）===================   
-    esp_netif_create_default_wifi_sta();                //STA/AP模块与LWIP协议栈连接
-    ESP_LOGI(TAG, "步骤4:STA模式网络接口创建成功");
+    esp_netif_create_default_wifi_sta();                        //STA/AP模块与LWIP协议栈连接
     wifi_init_config_t wifi_init_sta=WIFI_INIT_CONFIG_DEFAULT();
-    esp_wifi_init(&wifi_init_sta);                      // 初始化WiFi底层驱动
-    ESP_LOGI(TAG, "步骤5:WiFi底层驱动初始化成功");
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));  // 设置WiFi工作模式
-    ESP_LOGI(TAG, "步骤6:WiFi工作模式设置为STA站点模式");
+    esp_wifi_init(&wifi_init_sta);                              // 初始化WiFi底层驱动
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));          // 设置WiFi工作模式
     static esp_event_handler_instance_t  wifi_event_instance;   //注册事件回调处理函数
     static esp_event_handler_instance_t  ip_event_instance;
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
@@ -100,17 +92,14 @@ void Wifi_Sta_Init(){
         NULL,
         &ip_event_instance
     ));   
-    ESP_LOGI(TAG, "步骤7:WiFi/IP事件回调函数注册成功"); 
 // ================ 第三部分：模式专属配置与启动（步骤8-9）==============
-    wifi_config_t wifi_config={         //配置STA模式专属运行参数
+    wifi_config_t wifi_config={     //配置STA模式专属运行参数
         .sta={
             .ssid=WIFI_SSID,
             .password=WIFI_PASSWORD,
         },
     };
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA,&wifi_config));
-    ESP_LOGI(TAG, "步骤8:WiFi STA参数配置完成");          
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA,&wifi_config));        
     ESP_ERROR_CHECK(esp_wifi_start());                  //启动WiFi驱动
-    ESP_LOGI(TAG, "步骤9:WiFi驱动启动成功");
 }
 

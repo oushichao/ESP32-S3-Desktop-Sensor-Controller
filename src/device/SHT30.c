@@ -16,7 +16,6 @@
 static bool sht30_inited = false;
 static i2c_master_dev_handle_t sht30_handle = NULL;
 
-
 void SHT30_Init(){
     if(sht30_inited)return;
     I2C_Init(SHT30_SDA,SHT30_SCL,SHT30_ADDR,&sht30_handle);

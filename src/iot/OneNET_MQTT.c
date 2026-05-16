@@ -8,15 +8,11 @@
 #include "OneNET_MQTT.h"
 #include "OneNET_Token.h"
 #include "OneNET_dm.h"
-#include "Serial.h"
 #include "config.h"
 
 #define TAG "onenet"
 
 esp_mqtt_client_handle_t    mqtt_handler=NULL;
-extern bool relay_switch;
-extern float temp_threshold;
-extern float humi_threshold;
 extern EventGroupHandle_t   wifi_ev;
 
 static void OneNET_Property_Ack(const char* id,int code,const char* msg);
@@ -79,10 +75,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base,
             //200是成功码,其他为失败码
             OneNET_Property_Ack(cJSON_GetStringValue(id_js),200,"success");
             cJSON_Delete(property);
-            
-            Serial_SendNumber_Frame(relay_switch,CMD_SET_RELAY);
-            Serial_SendFloat_Frame(temp_threshold,CMD_SET_TEMP_LIMIT);
-            Serial_SendFloat_Frame(humi_threshold,CMD_SET_HUMI_LIMIT);
         }
         break;
 
