@@ -4,14 +4,14 @@
 #include "esp_log.h"
 #include <stdio.h>
 #include "driver/gpio.h"
-#include "MY_I2C.h"
+#include "MY_I2C/MY_I2C.h"
 #include "driver/i2c_master.h"
 #include "SHT30.h"
 
 #define SHT30_MEASURE_CYCLE 0x2236      //循环模式（周期1Hz）
 #define SHT30_ADDR  0x44            
-#define SHT30_SDA   0x00
-#define SHT30_SCL   0x01
+#define SHT30_SDA   GPIO_NUM_1
+#define SHT30_SCL   GPIO_NUM_2
 
 static bool sht30_inited = false;
 static i2c_master_dev_handle_t sht30_handle = NULL;

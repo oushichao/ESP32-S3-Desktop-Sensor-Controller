@@ -4,14 +4,14 @@
 #include "esp_log.h"
 #include <stdio.h>
 #include "driver/gpio.h"
-#include "MY_I2C.h"
+#include "MY_I2C/MY_I2C.h"
 #include "driver/i2c_master.h"
 #include "BH1750.h"
 
 
 #define BH1750_ADDR                 0x23             //0x5C或者0x23，取决于板上ADDR的引脚
-#define BH1750_SDA                  0x00
-#define BH1750_SCL                  0x01
+#define BH1750_SDA                  GPIO_NUM_1
+#define BH1750_SCL                  GPIO_NUM_2
 const uint8_t BH1750_MEASURE_CYCLE_LOW =  0x12;      //连续测量低分辨率
 
 static bool bh1750_inited = false;
