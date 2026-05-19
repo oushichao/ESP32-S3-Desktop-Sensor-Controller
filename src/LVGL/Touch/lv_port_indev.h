@@ -1,10 +1,6 @@
 #pragma once
 #include "lvgl.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* ===== FT6336 I2C 引脚（按实际接线修改） ===== */
 #define TOUCH_I2C_PORT      I2C_NUM_0
 #define TOUCH_I2C_SDA       5
@@ -14,6 +10,4 @@ extern "C" {
 
 void lv_port_indev_init(void);
 
-#ifdef __cplusplus
-}
-#endif
+

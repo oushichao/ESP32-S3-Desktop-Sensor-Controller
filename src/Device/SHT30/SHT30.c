@@ -8,7 +8,7 @@
 #include "driver/i2c_master.h"
 #include "SHT30.h"
 
-#define SHT30_MEASURE_CYCLE 0x2236      //循环模式（周期1Hz）
+#define SHT30_MEASURE_CYCLE 0x2400      //高精度
 #define SHT30_ADDR  0x44            
 #define SHT30_SDA   GPIO_NUM_1
 #define SHT30_SCL   GPIO_NUM_2
