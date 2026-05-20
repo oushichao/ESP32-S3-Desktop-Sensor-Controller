@@ -6,7 +6,7 @@
 #include "esp_lcd_panel_ops.h"
 
 
-#include "LVGL/Display/lv_port_display.h"
+#include "Lvgl/Display/lv_port_display.h"
 #include "LCD_Init.h"
 
 static bool Ledc_Backlight_Init_State=false;

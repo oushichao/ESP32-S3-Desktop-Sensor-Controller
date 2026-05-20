@@ -6,16 +6,18 @@
 #include <string.h>
 
 #include "OneNET_MQTT.h"
+#include "UI/UI_data.h"   // ← 新增
 
-bool relay_switch=false;     //继电器开关控制
-float temp_threshold=30.0;
-float humi_threshold=70.0;
 
-float temperature=30.0;
-float humidity=70.0;
-int32_t light=0;
-bool relay_state=false;      //继电器当前状态
-void OneNET_Property_Handle(cJSON*root){   //解析处理云端下发给你的指令
+extern int32_t g_temp_threshold;
+extern int32_t g_humi_threshold;
+extern float   g_temperature;
+extern float   g_humidity;
+extern int32_t g_light;
+extern bool    g_relay_state;
+
+
+void OneNET_Property_Handle(cJSON *root){
     /*  下行格式        
     {   
         "id": "123",
@@ -27,26 +29,25 @@ void OneNET_Property_Handle(cJSON*root){   //解析处理云端下发给你的�
         }
     }
     */
-    cJSON* param_js = cJSON_GetObjectItem(root, "params");     
+    cJSON *param_js = cJSON_GetObjectItem(root, "params");
     if (param_js) {
-        cJSON* name_js = param_js->child; 
+        cJSON *name_js = param_js->child;
         while (name_js) {
             if (strcmp(name_js->string, "temp_threshold") == 0) {
-                temp_threshold = cJSON_GetNumberValue(name_js);
+                g_temp_threshold = (int32_t)cJSON_GetNumberValue(name_js);
             }
             else if (strcmp(name_js->string, "relay_switch") == 0) {
-                relay_switch = cJSON_IsTrue(name_js) ? true : false;
-                relay_state = relay_switch;
+                g_relay_state = cJSON_IsTrue(name_js) ? true : false;
             }
             else if (strcmp(name_js->string, "humi_threshold") == 0) {
-                humi_threshold = cJSON_GetNumberValue(name_js);
+                g_humi_threshold = (int32_t)cJSON_GetNumberValue(name_js);
             }
             name_js = name_js->next;
         }
     }
 }
 
-cJSON* OneNET_Property_Upload(){          //生成要上报给云端的传感器数据 JSON
+cJSON *OneNET_Property_Upload(void){
     /*  上行格式
     {   
         "id": "123",
@@ -67,21 +68,22 @@ cJSON* OneNET_Property_Upload(){          //生成要上报给云端的传感器
         }
     }
     */
-    cJSON*root=cJSON_CreateObject();
-    cJSON_AddStringToObject(root,"id","123");
-    cJSON_AddStringToObject(root,"version","1.0");
-    cJSON* param_js=cJSON_AddObjectToObject(root,"params");
-    //温度
-    cJSON* temperature_js=cJSON_AddObjectToObject(param_js,"temperature");
-    cJSON_AddNumberToObject(temperature_js,"value",temperature);
-    //湿度
-    cJSON* humidity_js=cJSON_AddObjectToObject(param_js,"humidity");
-    cJSON_AddNumberToObject(humidity_js,"value",humidity);
-    //亮度
-    cJSON* light_js=cJSON_AddObjectToObject(param_js,"light");
-    cJSON_AddNumberToObject(light_js,"value",light);
-    //继电器状态
-    cJSON* relay_state_js=cJSON_AddObjectToObject(param_js,"relay_state");
-    cJSON_AddBoolToObject(relay_state_js,"value",relay_state); 
+    cJSON *root = cJSON_CreateObject();
+    cJSON_AddStringToObject(root, "id", "123");
+    cJSON_AddStringToObject(root, "version", "1.0");
+    cJSON *param_js = cJSON_AddObjectToObject(root, "params");
+
+    cJSON *t = cJSON_AddObjectToObject(param_js, "temperature");
+    cJSON_AddNumberToObject(t, "value", g_temperature);
+
+    cJSON *h = cJSON_AddObjectToObject(param_js, "humidity");
+    cJSON_AddNumberToObject(h, "value", g_humidity);
+
+    cJSON *l = cJSON_AddObjectToObject(param_js, "light");
+    cJSON_AddNumberToObject(l, "value", g_light);
+
+    cJSON *r = cJSON_AddObjectToObject(param_js, "relay_state");
+    cJSON_AddBoolToObject(r, "value", g_relay_state);
+
     return root;
 }

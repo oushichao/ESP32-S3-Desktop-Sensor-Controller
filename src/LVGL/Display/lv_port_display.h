@@ -1,12 +1,7 @@
 #pragma once
 #include "lvgl.h"
 #include "driver/gpio.h"
+#include "esp_lcd_panel_ops.h"
 
-
-
-/* ===== 分辨率 ===== */
-#define LCD_HOR_RES         240
-#define LCD_VER_RES         320
-
-void lv_port_display_init(void);
+lv_display_t *lvgl_port_display_init(esp_lcd_panel_handle_t panel);
 

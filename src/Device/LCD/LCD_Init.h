@@ -8,3 +8,9 @@
 #define LCD_SPI_DC          GPIO_NUM_9          // 数据/命令切换
 #define LCD_SPI_RST         GPIO_NUM_46         // 硬件复位
 #define LCD_BL              GPIO_NUM_45         // 背光，
+
+/* ===== 分辨率 ===== */
+#define LCD_HOR_RES         240
+#define LCD_VER_RES         320
+
+void ST7789_Init();
