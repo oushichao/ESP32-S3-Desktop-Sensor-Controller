@@ -14,3 +14,5 @@ extern int32_t g_light;
 
 /* 继电器 */
 extern bool    g_relay_state;
+
+void UI_init(void);

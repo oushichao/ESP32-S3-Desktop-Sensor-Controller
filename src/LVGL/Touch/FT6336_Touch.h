@@ -12,6 +12,6 @@
 
 void FT6336_Touch_Init();
 
-void FT6336_Touch_Read();
+void FT6336_Touch_Read(uint16_t* x,uint16_t* y,bool* pressed);
 
 

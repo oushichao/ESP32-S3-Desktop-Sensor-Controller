@@ -50,8 +50,7 @@ static void button_check_update(lv_event_t *e)
 }
 
 /* ===== UI 入口 ===== */
-void UI_init(void)
-{
+void UI_init(void){
     lv_obj_t *tabview = lv_tabview_create(lv_screen_active());
     lv_tabview_set_tab_bar_position(tabview, LV_DIR_BOTTOM);
 

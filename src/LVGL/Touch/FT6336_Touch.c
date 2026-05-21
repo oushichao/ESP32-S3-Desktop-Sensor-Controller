@@ -25,7 +25,14 @@
 static  i2c_master_bus_handle_t i2c_bus_handle=NULL;
 static  i2c_master_dev_handle_t i2c_dev_handle=NULL;
 static SemaphoreHandle_t touch_sem=NULL;
-static gpio_isr_t isr_handler=NULL;
+
+//中断ISR
+static IRAM_ATTR void isr_handler(){
+    BaseType_t pxHigherPriorityTaskWoken=pdFALSE;
+    xSemaphoreGiveFromISR(touch_sem,&pxHigherPriorityTaskWoken);
+    if(pxHigherPriorityTaskWoken)portYIELD_FROM_ISR();
+}
+
 
 void FT6336_Touch_Init(){
     touch_sem=xSemaphoreCreateBinary();
@@ -77,6 +84,38 @@ void FT6336_Touch_Init(){
     );
 }
 
-void FT6336_Touch_Read(){
+void FT6336_Touch_Read(uint16_t* x,uint16_t* y,bool* pressed){
+    if(!i2c_dev_handle||!touch_sem){
+        *pressed=false;
+        return ;
+    }
 
+    if(xSemaphoreTake(touch_sem,0)==pdFALSE){
+        *x=0;
+        *y=0;
+        *pressed=false;
+        return ;
+    }
+
+    uint8_t data[6];
+    uint8_t reg =FT6336_REG_GESTURE;
+    i2c_master_transmit_receive(
+        i2c_dev_handle,
+        &reg,
+        1,
+        data,
+        6,
+        100
+    );
+
+    uint16_t x_raw=((uint16_t)data[2]&0x0F) <<8 | data[3];
+    uint16_t y_raw=((uint16_t)data[4]&0x0F) <<8 | data[5];
+    if(x_raw>LCD_HOR_RES)x_raw=LCD_HOR_RES-1;
+    if(y_raw>LCD_VER_RES)y_raw=LCD_VER_RES-1;
+
+    *pressed=true;
+    *x=x_raw;
+    *y=y_raw;
+
+    xSemaphoreGive(touch_sem);
 }
