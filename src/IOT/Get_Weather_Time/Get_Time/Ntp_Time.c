@@ -14,8 +14,9 @@ void NTP_Init(){
     //阿里云NTP服务器
     esp_sntp_setservername(0,"ntp.aliyun.com");
     esp_sntp_setservername(1,"ntp.aliyun.com");//备用
-    esp_sntp_init();
     esp_sntp_set_sync_interval(3600*1000);
+    esp_sntp_init();
+    
     for(int i=0;i<10;i++){
         if(sntp_get_sync_status()==SNTP_SYNC_STATUS_COMPLETED)return ;
         vTaskDelay(pdMS_TO_TICKS(500));

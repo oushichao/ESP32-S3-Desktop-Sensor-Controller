@@ -8,9 +8,6 @@ managed_components/
 build/
 dist/
 
-# ==============================
-# LVGL 整个库！必忽略！（几千文件）
-# ==============================
 components/lvgl/
 
 # ==============================
@@ -43,3 +40,5 @@ Movies/
 Music/
 Pictures/
 Screenshots/
+
+config.h

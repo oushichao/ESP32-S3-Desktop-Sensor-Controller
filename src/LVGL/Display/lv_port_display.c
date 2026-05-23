@@ -11,8 +11,7 @@ extern esp_lcd_panel_handle_t panel_handler;
 
 #define DRAW_BUF_ROWS 32
 
-static void lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
-{
+static void lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map){
     esp_lcd_panel_draw_bitmap(panel_handler,   
         area->x1, area->y1,
         area->x2 + 1, area->y2 + 1,
@@ -20,8 +19,7 @@ static void lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px
     lv_display_flush_ready(disp);
 }
 
-lv_display_t *lvgl_port_display_init(esp_lcd_panel_handle_t panel)
-{
+lv_display_t *lvgl_port_display_init(esp_lcd_panel_handle_t panel){
     if (panel == NULL) {
         ESP_LOGE(TAG, "panel is NULL");
         return NULL;
