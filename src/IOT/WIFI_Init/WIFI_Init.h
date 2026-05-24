@@ -9,6 +9,5 @@
 #define WIFI_MAX_RETRY    5
 
 extern EventGroupHandle_t   wifi_ev;
-extern const char *TAG;
 
 void Wifi_Sta_Init();

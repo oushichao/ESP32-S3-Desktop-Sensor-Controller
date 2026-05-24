@@ -17,6 +17,7 @@
 
 #include "WIFI_Init.h"
 
+static const char* TAG ="WIFI_Init";
 EventGroupHandle_t   wifi_ev;   //确保wifi连接再连接mqtt
 static uint8_t retry_count=0;
 
