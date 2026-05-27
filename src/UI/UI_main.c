@@ -1,11 +1,13 @@
 #include "lvgl.h"
 #include "freertos/FreeRTOS.h"
+#include "esp_log.h"
 
 #include <stdbool.h>
 #include <stdio.h>
 #include "UI_main.h"
 #include "UI_data.h"
  
+static const char* TAG="UI_TEST";
 
 extern int32_t g_temp_threshold;
 extern int32_t g_humi_threshold;
@@ -15,8 +17,7 @@ extern int32_t g_light;
 extern bool    g_relay_state;
 
 /* ===== 辅助函数 ===== */
-static void set_led_status(lv_obj_t *obj, bool status)
-{
+void set_led_status(lv_obj_t *obj, bool status){
     if (status)
         lv_led_set_color(obj, lv_color_hex(0x00FF00));
     else
@@ -24,28 +25,23 @@ static void set_led_status(lv_obj_t *obj, bool status)
 }
 
 /* ===== 回调 ===== */
-static void slider_value_tem(lv_event_t *e)
-{
+static void slider_value_tem(lv_event_t *e){
     g_temp_threshold = lv_slider_get_value(lv_event_get_target(e));
 }
 
-static void slider_value_hum(lv_event_t *e)
-{
+static void slider_value_hum(lv_event_t *e){
     g_humi_threshold = lv_slider_get_value(lv_event_get_target(e));
 }
 
-static void slider_value_light(lv_event_t *e)
-{
+static void slider_value_light(lv_event_t *e){
     g_light = lv_slider_get_value(lv_event_get_target(e));
 }
 
-static void switch_value_rel(lv_event_t *e)
-{
+static void switch_value_rel(lv_event_t *e){
     g_relay_state = lv_obj_has_state(lv_event_get_target(e), LV_STATE_CHECKED);
 }
 
-static void button_check_update(lv_event_t *e)
-{
+static void button_check_update(lv_event_t *e){
     // OTA
 }
 
@@ -121,7 +117,7 @@ void UI_init(void){
     snprintf(buf, 32, "%s", g_relay_state ? "True" : "False");
     lv_label_set_text(current_relay, buf);
     lv_obj_set_pos(current_relay, 60, 210);
-
+ESP_LOGI(TAG,"%d",__LINE__);
     /* ---- Chart 页 ---- */
     int32_t fake_temp[30] = {
         -20, -15, -10, -5, 0, 5, 10, 15,
@@ -141,11 +137,11 @@ void UI_init(void){
     for (int j = 0; j < 30; j++)
         lv_chart_set_next_value(chart_temp, ser, fake_temp[j]);
     lv_chart_refresh(chart_temp);
-
+ESP_LOGI(TAG,"%d",__LINE__);
     lv_obj_t *temp_x = lv_label_create(tab_chart);
     lv_label_set_text(temp_x, "Temp/Time");
     lv_obj_align_to(temp_x, chart_temp, LV_ALIGN_OUT_BOTTOM_MID, 0, 5);
-
+ESP_LOGI(TAG,"%d",__LINE__);
     lv_obj_t *chart_humi = lv_chart_create(tab_chart);
     lv_obj_set_pos(chart_humi, 10, 85);
     lv_obj_set_size(chart_humi, 200, 60);
@@ -153,7 +149,7 @@ void UI_init(void){
     lv_obj_t *humi_x = lv_label_create(tab_chart);
     lv_label_set_text(humi_x, "Humi/Time");
     lv_obj_align_to(humi_x, chart_humi, LV_ALIGN_OUT_BOTTOM_MID, 0, 5);
-
+ESP_LOGI(TAG,"%d",__LINE__);
     lv_obj_t *chart_light = lv_chart_create(tab_chart);
     lv_obj_set_pos(chart_light, 10, 170);
     lv_obj_set_size(chart_light, 200, 60);
@@ -161,7 +157,7 @@ void UI_init(void){
     lv_obj_t *light_x = lv_label_create(tab_chart);
     lv_label_set_text(light_x, "Light/Time");
     lv_obj_align_to(light_x, chart_light, LV_ALIGN_OUT_BOTTOM_MID, 0, 5);
-
+ESP_LOGI(TAG,"%d",__LINE__);
     /* ---- Setting 页 ---- */
     // 温度阈值
     lv_obj_t *temp_limit = lv_slider_create(tab_setting);
@@ -172,12 +168,12 @@ void UI_init(void){
     lv_obj_t *temp_limit_label = lv_label_create(tab_setting);
     lv_obj_set_pos(temp_limit_label, 0, 0);
     lv_label_set_text(temp_limit_label, "Tem_Threshold:");
-
+ESP_LOGI(TAG,"%d",__LINE__);
     snprintf(buf, 32, "%ld", g_temp_threshold);
     lv_obj_t *tem_value_label = lv_label_create(tab_setting);
     lv_obj_set_pos(tem_value_label, 125, 0);
     lv_label_set_text(tem_value_label, buf);
-
+ESP_LOGI(TAG,"%d",__LINE__);
     // 湿度阈值
     lv_obj_t *humi_limit = lv_slider_create(tab_setting);
     lv_obj_set_pos(humi_limit, 5, 70);
@@ -187,12 +183,12 @@ void UI_init(void){
     lv_obj_t *humi_limit_label = lv_label_create(tab_setting);
     lv_obj_set_pos(humi_limit_label, 0, 50);
     lv_label_set_text(humi_limit_label, "Hum_Threshold:");
-
+ESP_LOGI(TAG,"%d",__LINE__);;
     snprintf(buf, 32, "%ld", g_humi_threshold);
     lv_obj_t *hum_value_label = lv_label_create(tab_setting);
     lv_obj_set_pos(hum_value_label, 125, 50);
     lv_label_set_text(hum_value_label, buf);
-
+ESP_LOGI(TAG,"%d",__LINE__);
     // 继电器
     lv_obj_t *relay_status_obj = lv_switch_create(tab_setting);
     lv_obj_set_pos(relay_status_obj, 110, 100);
@@ -200,7 +196,7 @@ void UI_init(void){
     lv_obj_t *relay_label = lv_label_create(tab_setting);
     lv_obj_set_pos(relay_label, 0, 100);
     lv_label_set_text(relay_label, "Relay_Status:");
-
+ESP_LOGI(TAG,"%d",__LINE__);
     // 背光
     lv_obj_t *back_light = lv_slider_create(tab_setting);
     lv_obj_set_pos(back_light, 5, 175);
@@ -210,12 +206,12 @@ void UI_init(void){
     lv_obj_t *back_label = lv_label_create(tab_setting);
     lv_obj_set_pos(back_label, 0, 150);
     lv_label_set_text(back_label, "Back_Light:");
-
+ESP_LOGI(TAG,"%d",__LINE__);
     snprintf(buf, 32, "%ld", g_light);
     lv_obj_t *back_value_label = lv_label_create(tab_setting);
     lv_obj_set_pos(back_value_label, 100, 150);
     lv_label_set_text(back_value_label, buf);
-
+ESP_LOGI(TAG,"%d",__LINE__);
     // OTA
     lv_obj_t *ota = lv_btn_create(tab_setting);
     lv_obj_set_pos(ota, 130, 210);
@@ -224,7 +220,7 @@ void UI_init(void){
     lv_obj_t *ota_label = lv_label_create(tab_setting);
     lv_obj_set_pos(ota_label, 0, 220);
     lv_label_set_text(ota_label, "Check Update:");
-
+ESP_LOGI(TAG,"%d",__LINE__);
     /* 绑定回调 */
     lv_obj_add_event_cb(temp_limit,       slider_value_tem,   LV_EVENT_VALUE_CHANGED, NULL);
     lv_obj_add_event_cb(humi_limit,       slider_value_hum,   LV_EVENT_VALUE_CHANGED, NULL);

@@ -153,5 +153,5 @@ esp_err_t Connect_Post_Data(const char*data){
     char topic[128];
     snprintf(topic,128,"$sys/%s/%s/thing/property/post",ONENET_PRODUCT_ID,ONENET_DEVICE_NAME);
     ESP_LOGI(TAG,"Upload topic:%s,payload:%s",topic,data);
-    return esp_mqtt_client_publish(mqtt_handler,topic,data,strlen(data),1,0);
+    return esp_mqtt_client_publish(mqtt_handler,topic,data,strlen(data),0,0);
 }

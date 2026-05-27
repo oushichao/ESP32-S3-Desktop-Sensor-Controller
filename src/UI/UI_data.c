@@ -6,3 +6,5 @@ float   g_temperature    = 30.0f;
 float   g_humidity       = 70.0f;
 int32_t g_light          = 0;
 bool    g_relay_state    = false;
+uint8_t backlight        = 80;
+char version[10]        = "1.0.0";
