@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "esp_ota_ops.h"
 
-
+#include "UI/UI_data.h"
 #include "OTA.h"
 
 //回滚功能暂未开启！！！！

@@ -108,6 +108,13 @@ esp_err_t OneNET_Start(){
     );
     //把生成的Token，设置为MQTT连接密码
     mqtt_config.credentials.authentication.password=token;
+
+    //遗嘱消息
+    mqtt_config.session.last_will.topic="device/status";
+    mqtt_config.session.last_will.msg="offline";
+    mqtt_config.session.last_will.qos=1;
+    mqtt_config.session.last_will.retain=1;
+
     //初始化MQTT客户端
     mqtt_handler=esp_mqtt_client_init(&mqtt_config);
 

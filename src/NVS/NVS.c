@@ -11,7 +11,7 @@ nvs_handle  handle;
 
 void NVS_Write_Str(char* key,char* str){
     if(!str||!key)return;
-    if(nvs_open("store_data",NVS_READWRITE,&handle)!=ESP_OK){
+    if(nvs_open("config",NVS_READWRITE,&handle)!=ESP_OK){
         ESP_LOGE(TAG,"[%s]nvs open fail!!!",__func__);
         return ;
     }
@@ -25,7 +25,7 @@ void NVS_Write_Str(char* key,char* str){
 
 void NVS_Write_int32_t(char* key,int32_t value){
     if(!key)return;
-    if(nvs_open("store_data",NVS_READWRITE,&handle)!=ESP_OK){
+    if(nvs_open("config",NVS_READWRITE,&handle)!=ESP_OK){
         ESP_LOGE(TAG,"[%s]nvs open fail!!!",__func__);
         return ;
     }
@@ -39,7 +39,7 @@ void NVS_Write_int32_t(char* key,int32_t value){
 
 void NVS_Write_uint16_t(char* key,uint16_t value){
     if(!key)return;
-    if(nvs_open("store_data",NVS_READWRITE,&handle)!=ESP_OK){
+    if(nvs_open("config",NVS_READWRITE,&handle)!=ESP_OK){
         ESP_LOGE(TAG,"[%s]nvs open fail!!!",__func__);
         return ;
     }
@@ -53,7 +53,7 @@ void NVS_Write_uint16_t(char* key,uint16_t value){
 
 void NVS_Write_uint8_t(char* key,uint8_t value){
     if(!key)return;
-    if(nvs_open("store_data",NVS_READWRITE,&handle)!=ESP_OK){
+    if(nvs_open("config",NVS_READWRITE,&handle)!=ESP_OK){
         ESP_LOGE(TAG,"[%s]nvs open fail!!!",__func__);
         return ;
     }
@@ -65,8 +65,8 @@ void NVS_Write_uint8_t(char* key,uint8_t value){
     ESP_LOGI(TAG,"[%s]nvs write success!!!",__func__);
 }
 
-void NVS_Read_Store_Data(){
-    if(nvs_open("store_data",NVS_READWRITE,&handle)!=ESP_OK){
+void NVS_Read_config(){
+    if(nvs_open("config",NVS_READWRITE,&handle)!=ESP_OK){
         ESP_LOGE(TAG,"nvs open fail!!!");
         return ;
     }
