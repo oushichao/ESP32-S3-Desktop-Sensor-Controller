@@ -1,5 +1,6 @@
 #include "lvgl.h"
 #include "Lvgl/Touch/FT6336_Touch.h"
+#include "esp_log.h"
 
 //LVGL定期调用
 static void touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data){
@@ -11,6 +12,10 @@ static void touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data){
     data->point.x = x;
     data->point.y = y;
     data->state   = pressed ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
+    
+    if (pressed) {
+        ESP_LOGI("INDEV", "x=%u y=%u", x, y);   // ← 加这行
+    }
 }
 
 void lv_port_indev_init(void){

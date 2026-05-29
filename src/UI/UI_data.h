@@ -22,3 +22,6 @@ extern char version[10] ;
 
 /* 时间*/
 extern char time_str[32];
+
+/*天气*/
+extern char* current_weather;

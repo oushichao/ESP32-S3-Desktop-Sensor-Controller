@@ -3,6 +3,8 @@
 #include <string.h>
 
 #include "Weather_Parse.h"
+#include "UI/UI_data.h"
+extern char* current_weather;
 
 static const char* TAG="Weather_Parse"; 
 /*
@@ -58,7 +60,7 @@ bool Weather_Parse_Now(const char* json_str,char* out,size_t out_len){
         return false;
     }
 
-    const char* current_weather=cJSON_GetStringValue(text);
+    current_weather=cJSON_GetStringValue(text);
     strncpy(out,current_weather,out_len-1);
     out[out_len-1]='\0';
 

@@ -1,21 +1,22 @@
 #include <stdio.h>
 #include <string.h>
-// FreeRTOS 系统依赖
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
-// ESP32 系统与WiFi核心库
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
-// NVS Flash 存储库（WiFi 强制依赖）
 #include "nvs_flash.h"
-// LwIP TCP/IP 协议栈相关
 #include "lwip/err.h"
+#include "lvgl.h"
 #include "lwip/sys.h"
 
 #include "WIFI_Init.h"
+#include "UI/UI_main.h"
+
+extern lv_obj_t *led_wifi;
+extern lv_obj_t *led_mqtt;
 
 static const char* TAG ="WIFI_Init";
 EventGroupHandle_t   wifi_ev;   //确保wifi连接再连接mqtt

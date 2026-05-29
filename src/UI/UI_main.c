@@ -50,6 +50,15 @@ void set_led_status(lv_obj_t *obj, bool status){
         lv_led_set_color(obj, lv_color_hex(0xFF0000));
 }
 
+static void slider_debug_cb(lv_event_t *e)
+{
+    lv_obj_t *slider = lv_event_get_target(e);
+    lv_event_code_t code = lv_event_get_code(e);
+    int32_t val = lv_slider_get_value(slider);
+    ESP_LOGI("SLIDER", "event=%d val=%ld", (int)code, (long)val);
+}
+
+
 /* ===== 回调 ===== */
 static void slider_released_tem(lv_event_t *e)
 {
@@ -98,6 +107,10 @@ void UI_init(void){
     lv_obj_t *tabview = lv_tabview_create(lv_screen_active());
     lv_tabview_set_tab_bar_position(tabview, LV_DIR_BOTTOM);
 
+    //禁用Tabview滑动切换
+    lv_obj_t *content = lv_tabview_get_content(tabview);
+    lv_obj_remove_flag(content, LV_OBJ_FLAG_SCROLLABLE); 
+
     lv_obj_t *tab_home    = lv_tabview_add_tab(tabview, "Home");
     lv_obj_t *tab_chart   = lv_tabview_add_tab(tabview, "Chart");
     lv_obj_t *tab_setting = lv_tabview_add_tab(tabview, "Setting");
@@ -127,14 +140,10 @@ void UI_init(void){
     lv_led_on(led_mqtt);
 
     // 时间
-    lv_obj_t *label_timer = lv_label_create(tab_home);
-    lv_label_set_text(label_timer, "Time:");
-    lv_obj_set_pos(label_timer, 10, 50);
-
     Get_Time_Str(time_str,(size_t)32);
     current_timer = lv_label_create(tab_home);
     lv_label_set_text(current_timer,time_str);
-    lv_obj_set_pos(current_timer, 80, 50);
+    lv_obj_set_pos(current_timer, 10, 50);
 
     // 温度
     lv_obj_t *label_temp = lv_label_create(tab_home);
@@ -291,4 +300,10 @@ void UI_init(void){
     lv_obj_add_event_cb(back_light,       slider_released_light, LV_EVENT_RELEASED, NULL);
     lv_obj_add_event_cb(relay_status_obj, switch_value_rel,      LV_EVENT_VALUE_CHANGED, NULL);
     lv_obj_add_event_cb(ota,              button_check_update, LV_EVENT_CLICKED, NULL);
+
+
+    lv_obj_add_event_cb(temp_limit, slider_debug_cb, LV_EVENT_PRESSED, NULL);
+    lv_obj_add_event_cb(temp_limit, slider_debug_cb, LV_EVENT_VALUE_CHANGED, NULL);
+    lv_obj_add_event_cb(temp_limit, slider_released_tem, LV_EVENT_RELEASED, NULL);
+
 }

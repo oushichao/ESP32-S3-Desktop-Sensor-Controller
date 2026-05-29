@@ -2,6 +2,7 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "lvgl.h"
+#include <time.h>
 
 #include "Device/LCD/LCD_Init.h"
 #include "Lvgl/Task/lvgl_port_task.h"
@@ -89,9 +90,13 @@ static const char *TAG = "main";
 
 void app_main(void)
 {
-    Wifi_Sta_Init();
-    NTP_Init();
+    //东八区
+    // setenv("TZ", "CST-8", 1);
+    // tzset();
 
+
+    // Wifi_Sta_Init();
+    // NTP_Init();
     /* 步骤 1：先初始化 LCD 硬件（SPI、面板、背光、信号量） */
     ILI9341_Init();
     FT6336_Touch_Init();
@@ -109,6 +114,7 @@ void app_main(void)
         //ui_show_test();
         lvgl_port_unlock();
     }
+
 
     ESP_LOGI(TAG, "ui created");
 }

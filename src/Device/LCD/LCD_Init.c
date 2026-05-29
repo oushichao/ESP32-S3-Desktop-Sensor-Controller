@@ -6,6 +6,7 @@
 #include "freertos/semphr.h"
 
 #include "LCD_Init.h"
+#include "UI/UI_data.h"
 
 static bool ledc_ok = false;
 esp_lcd_panel_io_handle_t io_handle = NULL;
@@ -21,7 +22,7 @@ static const uint8_t init_cmds[] = {
     0x00
 };
 
-
+extern uint8_t backlight;
 
 
 
@@ -122,5 +123,5 @@ void ILI9341_Init(void)
 
     ili9341_run_init();
     backlight_pwm_init();
-    ILI9341_Backlight_Set(80);
+    ILI9341_Backlight_Set(backlight);
 }
