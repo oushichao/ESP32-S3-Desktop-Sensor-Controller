@@ -9,7 +9,7 @@ extern int32_t g_humi_threshold;
 /* 传感器当前值 */
 extern float   g_temperature;
 extern float   g_humidity;
-extern int32_t g_light;
+extern uint16_t g_light;
 
 /* 继电器 */
 extern bool    g_relay_state;
@@ -21,7 +21,7 @@ extern uint8_t backlight;
 extern char version[10] ;
 
 /* 时间*/
-extern char time_str[32];
+extern char time_str[16];
 
 /*天气*/
-extern char* current_weather;
+extern char current_weather[16];

@@ -13,9 +13,9 @@ static const char *TAG = "lvgl_task";
 static SemaphoreHandle_t lvgl_mutex = NULL;
 
 #define LVGL_TASK_STACK_SIZE    (8 * 1024)
-#define LVGL_TASK_PRIORITY      2
+#define LVGL_TASK_PRIORITY      5
 #define LVGL_TASK_CORE          1            /* 跑在 Core 1，避开 WiFi/系统主任务 */
-#define LVGL_TASK_MAX_DELAY_MS  500
+#define LVGL_TASK_MAX_DELAY_MS  30
 #define LVGL_TASK_MIN_DELAY_MS  1
 
 /* LVGL tick 回调：LVGL 内部会调用它来获取毫秒数。

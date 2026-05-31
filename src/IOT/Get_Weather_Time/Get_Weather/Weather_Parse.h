@@ -12,4 +12,4 @@
 
     @return true 解析成功   false 解析失败
 */
-bool Weather_Parse_Now(const char* json_str,char* out,size_t out_len);
+bool Weather_Parse_Now(const char* json_str);

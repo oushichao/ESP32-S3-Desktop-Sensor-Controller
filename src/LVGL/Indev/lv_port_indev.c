@@ -3,20 +3,29 @@
 #include "esp_log.h"
 
 //LVGL定期调用
-static void touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data){
+static void touch_read_cb(lv_indev_t *indev, lv_indev_data_t *data)
+{
+    static uint16_t last_x = 0, last_y = 0;   // ← 记住上一次坐标
     uint16_t x = 0, y = 0;
     bool pressed = false;
 
     FT6336_Touch_Read(&x, &y, &pressed);
 
-    data->point.x = x;
-    data->point.y = y;
-    data->state   = pressed ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
-    
     if (pressed) {
-        ESP_LOGI("INDEV", "x=%u y=%u", x, y);   // ← 加这行
+        last_x = x;
+        last_y = y;
+        data->point.x = x;
+        data->point.y = y;
+        data->state = LV_INDEV_STATE_PRESSED;
+        ESP_LOGI("INDEV", "x=%u y=%u", x, y);
+    } else {
+        /* 释放时坐标必须保持上一次的值，不能给 (0,0) */
+        data->point.x = last_x;
+        data->point.y = last_y;
+        data->state = LV_INDEV_STATE_RELEASED;
     }
 }
+
 
 void lv_port_indev_init(void){
     lv_indev_t *indev = lv_indev_create();

@@ -5,14 +5,19 @@
 #include <time.h>
 
 #include "Device/LCD/LCD_Init.h"
+#include "Device/BH1750/BH1750.h"
+#include "Device/SHT30/SHT30.h"
+#include "Device/Relay_And_Led/Relay_And_Led.h"
 #include "Lvgl/Task/lvgl_port_task.h"
 #include "Lvgl/Touch/FT6336_Touch.h"
+#include "Lvgl/Indev/lv_port_indev.h"
 #include "UI/UI_main.h"
 #include "UI/UI_data.h"
-#include "Lvgl/Indev/lv_port_indev.h"
 #include "IOT/Get_Weather_Time/Get_Time/Ntp_Time.h"
 #include "IOT/WIFI_Init/WIFI_Init.h"
-
+#include "IOT/Get_Weather_Time/Get_Weather/Weather_HTTPS.h"
+#include "IOT/Get_Weather_Time/Get_Weather/Weather_Parse.h"
+#include "config.h"
 
 static const char *TAG = "main";
 
@@ -69,35 +74,40 @@ static const char *TAG = "main";
 //     ESP_LOGI(TAG, "touch test running, please touch the screen");
 // }
 
-// /* 在屏幕正中央显示白色 "test" 字样 */
-// static void ui_show_test(void)
-// {
-//     /* 1. 把活动屏幕背景设为黑色 */
-//     lv_obj_t *scr = lv_screen_active();
-//     lv_obj_set_style_bg_color(scr, lv_color_black(), LV_PART_MAIN);
-//     lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, LV_PART_MAIN);
 
-//     /* 2. 创建 label，文字白色，居中 */
-//     lv_obj_t *label = lv_label_create(scr);
-//     lv_label_set_text(label, "test");
-//     lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
-//     lv_obj_set_style_text_font(label, &lv_font_montserrat_20, 0);
+// void app_main(void){
+//     SHT30_Init();
+//     BH1750_Init();
 
+//     while (1) {
+//        SHT30_Read_Data(&g_temperature, &g_humidity);
+//        BH1750_ReadData(&g_light);
 
-//     lv_obj_center(label);
+//        int ti = (int)g_temperature;
+//        int td = (int)((g_temperature - ti) * 10 + 0.5);
+//        int hi = (int)g_humidity;
+//        int hd = (int)((g_humidity - hi) * 10 + 0.5);
 
+//        ESP_LOGI(TAG, "temp:%d.%d, hum:%d.%d, light:%u",
+//                 ti, abs(td), hi, abs(hd), (unsigned)g_light);
+//        vTaskDelay(pdMS_TO_TICKS(1000));
+//     }
 // }
+void app_main(){
+    setenv("TZ", "CST-8", 1);    //东八区
+    tzset();
 
-void app_main(void)
-{
-    //东八区
-    // setenv("TZ", "CST-8", 1);
-    // tzset();
-
-
-    // Wifi_Sta_Init();
-    // NTP_Init();
-    /* 步骤 1：先初始化 LCD 硬件（SPI、面板、背光、信号量） */
+    Wifi_Sta_Init();
+    //OTA_Rollback_Check();   
+    NTP_Init();
+    char *json = Weather_HTTPS_Fetch_Now(CITY_ID, API_KEY);
+    if (json) {
+        if (Weather_Parse_Now(json)) {
+            ESP_LOGI("WEATHER", "天气: %s", current_weather);
+        }  
+        free(json);
+    }
+     
     ILI9341_Init();
     FT6336_Touch_Init();
 
@@ -111,10 +121,7 @@ void app_main(void)
     /* 步骤 3：创建 UI。所有 LVGL API 调用必须在锁内进行。 */
     if (lvgl_port_lock(0)) {
         UI_init();
-        //ui_show_test();
         lvgl_port_unlock();
     }
-
-
-    ESP_LOGI(TAG, "ui created");
 }
+

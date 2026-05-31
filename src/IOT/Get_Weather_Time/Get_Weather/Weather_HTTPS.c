@@ -127,7 +127,7 @@ char* Weather_HTTPS_Fetch_Now(const char* city_id,const char* api_key){
     int n=  snprintf(
                 url,
                 sizeof(url),
-                "https://%s:%d%s?location=%s&key=%s",
+                "https://%s:%d%s?location=%s&key=%s&lang=en",
                 API_HOST,
                 API_PORT,
                 API_PATH,

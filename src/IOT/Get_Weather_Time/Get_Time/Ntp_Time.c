@@ -17,7 +17,7 @@ void NTP_Init(){
     esp_sntp_set_sync_interval(3600*1000);
     esp_sntp_init();
     
-    for(int i=0;i<10;i++){
+    for(int i=0;i<5;i++){
         if(sntp_get_sync_status()==SNTP_SYNC_STATUS_COMPLETED)return ;
         vTaskDelay(pdMS_TO_TICKS(500));
     }
@@ -33,5 +33,5 @@ void Get_Time_Str(char* buf,size_t buflen){ //获取当前时间
         snprintf(buf, buflen, "--:--:--");
         return;
     }
-    strftime(buf,buflen,"%Y-%m-%d %H:%M:%S",&timeinfo);
+    strftime(buf,buflen,"%H:%M:%S",&timeinfo);
 }

@@ -28,7 +28,12 @@ void BH1750_Init(){
 void BH1750_ReadData(uint16_t* lux){
     if(lux==NULL||bh1750_handle==NULL)return ;
     uint8_t data[2]={0};
-    i2c_master_receive(bh1750_handle,data,2,pdMS_TO_TICKS(100));
+    esp_err_t err=i2c_master_receive(bh1750_handle,data,2,pdMS_TO_TICKS(100));
+    if(err != ESP_OK){
+        ESP_LOGE("BH1750","I2C read failed: %s", esp_err_to_name(err));
+        *lux = 0;
+        return;
+    }
     *lux=(data[0]<<8|data[1])/1.2;
 }
 //计算公式:Lux=RawValue/12

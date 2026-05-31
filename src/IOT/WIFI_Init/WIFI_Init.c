@@ -70,13 +70,18 @@ void Wifi_Sta_Init(){
     wifi_ev=xEventGroupCreate();
     retry_count=0;
 // ===================== 第一部分：前置必选初始化（步骤1-3）======================
-    ESP_ERROR_CHECK(nvs_flash_init());                          //初始化NVS
+    esp_err_t ret = nvs_flash_init();                           //初始化NVS 
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(ret);                         
     ESP_ERROR_CHECK(esp_netif_init());                          //初始化TCP/IP协议栈
     ESP_ERROR_CHECK(esp_event_loop_create_default());           //初始化循环事件组
 // ===================== 第二部分：WiFi核心通用初始化（步骤4-7）===================   
     esp_netif_create_default_wifi_sta();                        //STA/AP模块与LWIP协议栈连接
     wifi_init_config_t wifi_init_sta=WIFI_INIT_CONFIG_DEFAULT();
-    esp_wifi_init(&wifi_init_sta);                              // 初始化WiFi底层驱动
+    ESP_ERROR_CHECK(esp_wifi_init(&wifi_init_sta));                              // 初始化WiFi底层驱动
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));          // 设置WiFi工作模式
     static esp_event_handler_instance_t  wifi_event_instance;   //注册事件回调处理函数
     static esp_event_handler_instance_t  ip_event_instance;

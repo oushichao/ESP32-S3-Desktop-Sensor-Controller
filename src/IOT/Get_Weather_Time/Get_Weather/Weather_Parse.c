@@ -4,7 +4,8 @@
 
 #include "Weather_Parse.h"
 #include "UI/UI_data.h"
-extern char* current_weather;
+
+extern char current_weather[16];
 
 static const char* TAG="Weather_Parse"; 
 /*
@@ -27,8 +28,8 @@ static const char* TAG="Weather_Parse";
         }
     }
 */
-bool Weather_Parse_Now(const char* json_str,char* out,size_t out_len){
-    if(!json_str||!out||out_len==0)return false;
+bool Weather_Parse_Now(const char* json_str){
+    if(!json_str)return false;
     //解析json,返回cjson树
     cJSON* root=cJSON_Parse(json_str);
     if (!root) {
@@ -60,9 +61,8 @@ bool Weather_Parse_Now(const char* json_str,char* out,size_t out_len){
         return false;
     }
 
-    current_weather=cJSON_GetStringValue(text);
-    strncpy(out,current_weather,out_len-1);
-    out[out_len-1]='\0';
+    strncpy(current_weather, cJSON_GetStringValue(text), sizeof(current_weather) - 1);
+    current_weather[sizeof(current_weather) - 1] = '\0';
 
     cJSON_Delete(root);
     return true;

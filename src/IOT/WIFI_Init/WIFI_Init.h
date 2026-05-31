@@ -4,9 +4,11 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include <stdio.h>
+
 #define WIFI_SSID         "HONOR 50"            
 #define WIFI_PASSWORD     "12345678"
 #define WIFI_MAX_RETRY    5
+#define WIFI_CONNECTED_BIT  BIT0
 
 extern EventGroupHandle_t   wifi_ev;
 

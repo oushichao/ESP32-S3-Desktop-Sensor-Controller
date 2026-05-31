@@ -9,12 +9,14 @@
 #include "UI_data.h"
 #include "IOT/Get_Weather_Time/Get_Time/Ntp_Time.h"
 #include "IOT/Get_Weather_Time/Get_Weather/Weather_Parse.h"
+#include "IOT/OTA/OTA.h"
+
 
 /* ==========  Seeting控制刷新   ========== */
-static lv_obj_t *label_tem_value   = NULL;
-static lv_obj_t *label_hum_value   = NULL;
-static lv_obj_t *label_back_value  = NULL;
-
+lv_obj_t *label_tem_value   = NULL;
+lv_obj_t *label_hum_value   = NULL;
+lv_obj_t *label_back_value  = NULL;
+lv_obj_t* progress_bar      = NULL;
 
 /*===========  Home控制刷新  ============*/
 lv_obj_t *led_wifi          =NULL;
@@ -24,19 +26,22 @@ lv_obj_t *current_temp      =NULL;
 lv_obj_t *current_humi      =NULL; 
 lv_obj_t *current_light     =NULL;
 lv_obj_t *label_home_relay  =NULL;
+lv_obj_t *weather           =NULL;
 
 /*===========   Chart控制刷新  ==========*/
 lv_obj_t *chart_temp        =NULL;
 lv_obj_t *chart_humi        =NULL;
 lv_obj_t *chart_light       =NULL;
 
+
 extern int32_t g_temp_threshold;
 extern int32_t g_humi_threshold;
 extern float   g_temperature;
 extern float   g_humidity;
-extern int32_t g_light;
+extern uint16_t g_light;
 extern bool    g_relay_state;
-extern char    time_str[32];
+extern char    time_str[16];
+extern char    current_weather[16];
 
 /* 
     @brief 设置Home页的led显示颜色
@@ -50,19 +55,19 @@ void set_led_status(lv_obj_t *obj, bool status){
         lv_led_set_color(obj, lv_color_hex(0xFF0000));
 }
 
-static void slider_debug_cb(lv_event_t *e)
-{
-    lv_obj_t *slider = lv_event_get_target(e);
-    lv_event_code_t code = lv_event_get_code(e);
-    int32_t val = lv_slider_get_value(slider);
-    ESP_LOGI("SLIDER", "event=%d val=%ld", (int)code, (long)val);
-}
+// static void slider_debug_cb(lv_event_t *e)
+// {
+//     lv_obj_t *slider = lv_event_get_current_target(e);
+//     lv_event_code_t code = lv_event_get_code(e);
+//     int32_t val = lv_slider_get_value(slider);
+//     ESP_LOGI("SLIDER", "event=%d val=%ld", (int)code, (long)val);
+// }
 
 
 /* ===== 回调 ===== */
 static void slider_released_tem(lv_event_t *e)
 {
-    lv_obj_t *slider = lv_event_get_target(e);
+    lv_obj_t *slider = lv_event_get_current_target(e);
     g_temp_threshold = (int32_t)lv_slider_get_value(slider);
     if (label_tem_value) {
         lv_label_set_text_fmt(label_tem_value, "%ld", (long)g_temp_threshold);
@@ -81,11 +86,12 @@ static void slider_released_hum(lv_event_t *e)
 static void slider_released_light(lv_event_t *e)
 {
     lv_obj_t *slider = lv_event_get_target(e);
-    g_light = (int32_t)lv_slider_get_value(slider);
+    backlight = (uint8_t)lv_slider_get_value(slider);
     if (label_back_value) {
-        lv_label_set_text_fmt(label_back_value, "%ld", (long)g_light);
+        lv_label_set_text_fmt(label_back_value, "%u", (unsigned)backlight);
     }
 }
+
 
 
 static void switch_value_rel(lv_event_t *e)
@@ -98,8 +104,10 @@ static void switch_value_rel(lv_event_t *e)
 }
 
 
-static void button_check_update(lv_event_t *e){
-    // OTA
+static void button_check_update(lv_event_t *e){// OTA
+    lv_obj_t* bt=lv_event_get_target(e);
+    // 显示进度条
+    lv_obj_clear_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
 }
 
 /* ===== UI 入口 ===== */
@@ -107,13 +115,11 @@ void UI_init(void){
     lv_obj_t *tabview = lv_tabview_create(lv_screen_active());
     lv_tabview_set_tab_bar_position(tabview, LV_DIR_BOTTOM);
 
-    //禁用Tabview滑动切换
-    lv_obj_t *content = lv_tabview_get_content(tabview);
-    lv_obj_remove_flag(content, LV_OBJ_FLAG_SCROLLABLE); 
 
     lv_obj_t *tab_home    = lv_tabview_add_tab(tabview, "Home");
     lv_obj_t *tab_chart   = lv_tabview_add_tab(tabview, "Chart");
     lv_obj_t *tab_setting = lv_tabview_add_tab(tabview, "Setting");
+
 
     /* ---- Home 页 ---- */
 
@@ -139,11 +145,16 @@ void UI_init(void){
     set_led_status(led_mqtt, false);
     lv_led_on(led_mqtt);
 
-    // 时间
+    // 时间和天气
     Get_Time_Str(time_str,(size_t)32);
     current_timer = lv_label_create(tab_home);
-    lv_label_set_text(current_timer,time_str);
     lv_obj_set_pos(current_timer, 10, 50);
+    lv_label_set_text(current_timer,time_str);
+    
+    weather=lv_label_create(tab_home);
+    lv_obj_set_pos(weather, 100, 50);
+    lv_label_set_text(weather,current_weather);
+    
 
     // 温度
     lv_obj_t *label_temp = lv_label_create(tab_home);
@@ -173,7 +184,7 @@ void UI_init(void){
     lv_obj_set_pos(label_light, 10, 170);
     current_light = lv_label_create(tab_home);
 
-    lv_label_set_text_fmt(current_light,"%ld",(long)g_light);
+    lv_label_set_text_fmt(current_light, "%u", (unsigned)g_light);
     lv_obj_set_pos(current_light, 80, 170);
 
     // 继电器
@@ -275,24 +286,31 @@ void UI_init(void){
     lv_obj_set_pos(back_light, 5, 160);
     lv_obj_set_size(back_light, 200, 15);
     lv_slider_set_range(back_light, 0, 100);
-    lv_slider_set_value(back_light, g_light, LV_ANIM_OFF);
+    lv_slider_set_value(back_light, backlight, LV_ANIM_OFF);
     lv_obj_t *back_label = lv_label_create(tab_setting);
     lv_obj_set_pos(back_label, 0, 135);
     lv_label_set_text(back_label, "Back_Light:");
 
     label_back_value = lv_label_create(tab_setting);
     lv_obj_set_pos(label_back_value, 130, 135);
-    lv_label_set_text_fmt(label_back_value, "%ld", (long)g_light);
+    lv_label_set_text_fmt(label_back_value, "%ld", (long)backlight);
 
 
     // OTA
     lv_obj_t *ota = lv_btn_create(tab_setting);
-    lv_obj_set_pos(ota, 160, 185);
-    lv_obj_set_size(ota, 30, 30);
+    lv_obj_set_pos(ota, 160, 190);
+    lv_obj_set_size(ota, 20, 20);
     lv_obj_set_style_radius(ota, 40, 0);
     lv_obj_t *ota_label = lv_label_create(tab_setting);
     lv_obj_set_pos(ota_label, 0, 190);
     lv_label_set_text(ota_label, "Check Update:");
+    //进度条
+    progress_bar =lv_bar_create(tab_setting);
+    lv_obj_set_pos(progress_bar,0,215);
+    lv_obj_set_size(progress_bar,100,20);
+    lv_bar_set_range(progress_bar,0,100);
+    lv_bar_set_value(progress_bar,0,LV_ANIM_OFF);
+    lv_obj_add_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
 
     /* 绑定回调 */
     lv_obj_add_event_cb(temp_limit,       slider_released_tem,   LV_EVENT_RELEASED, NULL);
@@ -300,10 +318,4 @@ void UI_init(void){
     lv_obj_add_event_cb(back_light,       slider_released_light, LV_EVENT_RELEASED, NULL);
     lv_obj_add_event_cb(relay_status_obj, switch_value_rel,      LV_EVENT_VALUE_CHANGED, NULL);
     lv_obj_add_event_cb(ota,              button_check_update, LV_EVENT_CLICKED, NULL);
-
-
-    lv_obj_add_event_cb(temp_limit, slider_debug_cb, LV_EVENT_PRESSED, NULL);
-    lv_obj_add_event_cb(temp_limit, slider_debug_cb, LV_EVENT_VALUE_CHANGED, NULL);
-    lv_obj_add_event_cb(temp_limit, slider_released_tem, LV_EVENT_RELEASED, NULL);
-
 }

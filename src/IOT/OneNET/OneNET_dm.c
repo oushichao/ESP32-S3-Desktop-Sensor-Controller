@@ -13,7 +13,7 @@ extern int32_t g_temp_threshold;
 extern int32_t g_humi_threshold;
 extern float   g_temperature;
 extern float   g_humidity;
-extern int32_t g_light;
+extern uint16_t g_light;
 extern bool    g_relay_state;
 
 
