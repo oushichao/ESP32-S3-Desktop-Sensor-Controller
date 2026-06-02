@@ -24,67 +24,66 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base,
     // 强转为MQTT事件指针
     esp_mqtt_event_handle_t event = (esp_mqtt_event_handle_t)event_data;
 
-    switch ((esp_mqtt_event_id_t)event_id)
-    {
-    case MQTT_EVENT_CONNECTED:
-        ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-        xEventGroupSetBits(wifi_ev, BIT1);
-        OneNET_Subscribe();
-        //上报数据,为了数据同步
-        cJSON* property_js=OneNET_Property_Upload();           
-        char*data=cJSON_PrintUnformatted(property_js);//将一个cjson对象转为json格式字符串
-        Connect_Post_Data(data);
-        cJSON_free(data);
-        cJSON_Delete(property_js);
-        break;
+    switch ((esp_mqtt_event_id_t)event_id){
+        case MQTT_EVENT_CONNECTED:
+            ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+            xEventGroupSetBits(wifi_ev, BIT1);
+            OneNET_Subscribe();
+            //上报数据,为了数据同步
+            cJSON* property_js=OneNET_Property_Upload();           
+            char*data=cJSON_PrintUnformatted(property_js);//将一个cjson对象转为json格式字符串
+            Connect_Post_Data(data);
+            cJSON_free(data);
+            cJSON_Delete(property_js);
+            break;
 
-    case MQTT_EVENT_DISCONNECTED:
-        ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
-        break;
+        case MQTT_EVENT_DISCONNECTED:
+            ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
+            break;
 
-    case MQTT_EVENT_SUBSCRIBED:
-        ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-        break;
+        case MQTT_EVENT_SUBSCRIBED:
+            ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+            break;
 
-    case MQTT_EVENT_UNSUBSCRIBED:
-        ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
-        break;
+        case MQTT_EVENT_UNSUBSCRIBED:
+            ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
+            break;
 
-    case MQTT_EVENT_PUBLISHED:
-        ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
-        break;
+        case MQTT_EVENT_PUBLISHED:
+            ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+            break;
 
-    case MQTT_EVENT_DATA:   //onenet平台下行任何数据都会进入
-        ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-        char topic_buf[128] = {0};
-        char data_buf[256]  = {0}; 
-             
-        int tlen = (event->topic_len < 127) ? event->topic_len : 127;
-        int dlen = (event->data_len < 255) ? event->data_len : 255;
-        //补'\0' 
-        memcpy(topic_buf, event->topic, tlen);
-        memcpy(data_buf,  event->data,  dlen);
+        case MQTT_EVENT_DATA:   //onenet平台下行任何数据都会进入
+            ESP_LOGI(TAG, "MQTT_EVENT_DATA");
+            char topic_buf[128] = {0};
+            char data_buf[256]  = {0}; 
+                
+            int tlen = (event->topic_len < 127) ? event->topic_len : 127;
+            int dlen = (event->data_len < 255) ? event->data_len : 255;
+            //补'\0' 
+            memcpy(topic_buf, event->topic, tlen);
+            memcpy(data_buf,  event->data,  dlen);
 
-        printf("TOPIC: %s\r\n", topic_buf);
-        printf("DATA: %s\r\n", data_buf);
-        if(strstr(topic_buf,"property/set")){   //下行数据处理
-            cJSON*property=cJSON_Parse(data_buf);//将json格式字符串转为一个cjson对象
-            OneNET_Property_Handle(property);
-            cJSON* id_js=cJSON_GetObjectItem(property,"id");
-            
-            //200是成功码,其他为失败码
-            OneNET_Property_Ack(cJSON_GetStringValue(id_js),200,"success");
-            cJSON_Delete(property);
-        }
-        break;
+            printf("TOPIC: %s\r\n", topic_buf);
+            printf("DATA: %s\r\n", data_buf);
+            if(strstr(topic_buf,"property/set")){   //下行数据处理
+                cJSON*property=cJSON_Parse(data_buf);//将json格式字符串转为一个cjson对象
+                OneNET_Property_Handle(property);
+                cJSON* id_js=cJSON_GetObjectItem(property,"id");
+                
+                //200是成功码,其他为失败码
+                OneNET_Property_Ack(cJSON_GetStringValue(id_js),200,"success");
+                cJSON_Delete(property);
+            }
+            break;
 
-    case MQTT_EVENT_ERROR:
-        ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
-        break;
+        case MQTT_EVENT_ERROR:
+            ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
+            break;
 
-    default:
-        ESP_LOGI(TAG, "Other event id: %d", event_id);
-        break;
+        default:
+            ESP_LOGI(TAG, "Other event id: %d", event_id);
+            break;
     }
 }
 

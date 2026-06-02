@@ -112,6 +112,7 @@ static void button_check_update(lv_event_t *e){// OTA
 
 /* ===== UI 入口 ===== */
 void UI_init(void){
+
     lv_obj_t *tabview = lv_tabview_create(lv_screen_active());
     lv_tabview_set_tab_bar_position(tabview, LV_DIR_BOTTOM);
 
@@ -318,4 +319,5 @@ void UI_init(void){
     lv_obj_add_event_cb(back_light,       slider_released_light, LV_EVENT_RELEASED, NULL);
     lv_obj_add_event_cb(relay_status_obj, switch_value_rel,      LV_EVENT_VALUE_CHANGED, NULL);
     lv_obj_add_event_cb(ota,              button_check_update, LV_EVENT_CLICKED, NULL);
+
 }

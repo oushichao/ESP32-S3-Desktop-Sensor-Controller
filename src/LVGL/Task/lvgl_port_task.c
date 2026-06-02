@@ -48,6 +48,7 @@ static void lvgl_task(void *arg)
             delay_ms = lv_timer_handler();
             lvgl_port_unlock();
         }
+
         if (delay_ms > LVGL_TASK_MAX_DELAY_MS) delay_ms = LVGL_TASK_MAX_DELAY_MS;
         if (delay_ms < LVGL_TASK_MIN_DELAY_MS) delay_ms = LVGL_TASK_MIN_DELAY_MS;
         vTaskDelay(pdMS_TO_TICKS(delay_ms));

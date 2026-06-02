@@ -97,16 +97,16 @@ void app_main(){
     setenv("TZ", "CST-8", 1);    //东八区
     tzset();
 
-    Wifi_Sta_Init();
+    //Wifi_Sta_Init();
     //OTA_Rollback_Check();   
-    NTP_Init();
-    char *json = Weather_HTTPS_Fetch_Now(CITY_ID, API_KEY);
-    if (json) {
-        if (Weather_Parse_Now(json)) {
-            ESP_LOGI("WEATHER", "天气: %s", current_weather);
-        }  
-        free(json);
-    }
+    //NTP_Init();
+    // char *json = Weather_HTTPS_Fetch_Now(CITY_ID, API_KEY);
+    // if (json) {
+    //     if (Weather_Parse_Now(json)) {
+    //         ESP_LOGI("WEATHER", "天气: %s", current_weather);
+    //     }  
+    //     free(json);
+    // }
      
     ILI9341_Init();
     FT6336_Touch_Init();

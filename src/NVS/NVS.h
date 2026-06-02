@@ -1,4 +1,5 @@
 #pragma once
+#include <stdlib.h>
 
 void NVS_Init();
 void NVS_Write_Str(char* key,char* str);
