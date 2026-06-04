@@ -18,7 +18,6 @@
 #include "IOT/Get_Weather_Time/Get_Weather/Weather_HTTPS.h"
 #include "IOT/Get_Weather_Time/Get_Weather/Weather_Parse.h"
 #include "config.h"
-
 static const char *TAG = "main";
 
 // pio run -t monitor
