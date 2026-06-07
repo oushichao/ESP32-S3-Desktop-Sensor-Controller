@@ -714,7 +714,7 @@
 /*File system interfaces for common APIs */
 
 /*Setting a default driver letter allows skipping the driver prefix in filepaths*/
-#define LV_FS_DEFAULT_DRIVE_LETTER '\0'
+#define LV_FS_DEFAULT_DRIVER_LETTER 'S'
 
 /*API for fopen, fread, etc*/
 #define LV_USE_FS_STDIO 0
@@ -1075,7 +1075,7 @@
 *==================*/
 
 /*Enable the examples to be built with the library*/
-#define LV_BUILD_EXAMPLES 1
+#define LV_BUILD_EXAMPLES 0
 
 /*===================
  * DEMO USAGE

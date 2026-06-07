@@ -72,6 +72,7 @@ static char *gzip_decompress(const uint8_t *src, size_t src_len, size_t *out_len
             if (!tmp) { free(dst); return NULL; }
             dst = tmp;
         }
+        vTaskDelay(1);
     } while (status == TINFL_STATUS_HAS_MORE_OUTPUT);
 
     if (status != TINFL_STATUS_DONE) {
@@ -163,7 +164,6 @@ char* Weather_HTTPS_Fetch_Now(const char* city_id,const char* api_key){
     };
     
     esp_http_client_handle_t client_handle=esp_http_client_init(&cfg);
-    esp_http_client_set_header(client_handle, "Accept-Encoding", "identity");//禁用gzip压缩
     if(client_handle==NULL){
         ESP_LOGE(TAG,"[%s:%d] esp_http_client_init FAIL!!!",__func__,__LINE__);
         free(store_buf.data);

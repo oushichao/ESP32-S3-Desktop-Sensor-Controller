@@ -42,3 +42,5 @@ Pictures/
 Screenshots/
 
 config.h
+test/
+lib/

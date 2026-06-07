@@ -25,7 +25,7 @@ void I2C_Init(gpio_num_t SDA,gpio_num_t SCL,uint8_t address,i2c_master_dev_handl
     i2c_device_config_t dev_config={            //从设备配置
         .dev_addr_length=I2C_ADDR_BIT_LEN_7,    //地址位宽
         .device_address=address,                //设备i2c地址
-        .scl_speed_hz=100000,                   //通信速度
+        .scl_speed_hz=10*100*100,                   //通信速度
     };
     ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle,&dev_config,dev_handle));
 }
