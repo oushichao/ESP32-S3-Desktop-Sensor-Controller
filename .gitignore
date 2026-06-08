@@ -7,14 +7,20 @@
 managed_components/
 build/
 dist/
+build.log        # 你的日志文件
 
+# ==============================
+# 第三方组件库（你的核心冗余目录）
+# ==============================
 components/
+lib/
 
 # ==============================
 # ESP-IDF 自动生成文件
 # ==============================
 sdkconfig.old
 sdkconfig.*
+dependencies.lock # ESP-IDF 依赖锁文件
 
 # ==============================
 # VS Code 编辑器配置
@@ -40,7 +46,11 @@ Movies/
 Music/
 Pictures/
 Screenshots/
-
-config.h
 test/
-lib/
+
+# ==============================
+# 自定义无用文件
+# ==============================
+config.h
+include/README
+lib/README
