@@ -98,7 +98,6 @@ static void switch_value_rel(lv_event_t *e){
 static void button_check_update(lv_event_t *e){// OTA
     // 显示进度条
     lv_obj_clear_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
-    lv_bar_set_value(progress_bar,0,LV_ANIM_OFF);
     xEventGroupSetBits(wifi_ev, OTA_DOWNLOAD_BIT);
 }
 

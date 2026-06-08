@@ -19,20 +19,21 @@
 #include "IOT/Get_Weather_Time/Get_Time/Ntp_Time.h"
 #include "IOT/Get_Weather_Time/Get_Weather/Weather_HTTPS.h"
 #include "IOT/Get_Weather_Time/Get_Weather/Weather_Parse.h"
+#include "IOT/OTA/OTA.h"
 #include "MY_I2C/MY_I2C.h"
 #include "NVS/NVS.h"
 #include "config.h"
 
 // pio run -t monitor
-//static const char* TAG="mian";
-
-
+static const char* TAG="mian";
 
 
 void app_main()
 {
     setenv("TZ", "CST-8", 1);
     tzset();
+    ESP_LOGI(TAG, "当前版本: %s", Get_App_Version());
+
     NVS_Read_Config();
     BH1750_Init();
     SHT30_Init();

@@ -11,10 +11,8 @@ typedef struct {
 
 extern QueueHandle_t ota_progress_queue;
 
-void ota_task_init(void);       /* app_main 初始化阶段调用一次 */
-void ota_trigger_start(void);   /* 按钮回调中调用 */
-
-
+void Ota_Task_Init();       /* app_main 初始化阶段调用一次 */
 const char* Get_App_Version();
-void Set_App_Vaild(int vaild);
-void OTA_Rollback_Check(void);
+void Set_App_Vaild(bool vaild);
+void OTA_Rollback_Check();
+void Ota_Send_Progress(int percent, const char *status);

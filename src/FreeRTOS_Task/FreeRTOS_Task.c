@@ -5,6 +5,8 @@
 #include "lvgl.h"
 #include "esp_lvgl_port.h"
 #include "FreeRTOS_Task.h"
+#include "esp_http_client.h"
+#include "esp_ota_ops.h"
 
 #include "IOT/OTA/OTA.h"
 #include "Device/BH1750/BH1750.h"
@@ -19,6 +21,7 @@
 #include "IOT/Get_Weather_Time/Get_Time/Ntp_Time.h"
 #include "IOT/Get_Weather_Time/Get_Weather/Weather_Parse.h"
 #include "IOT/Get_Weather_Time/Get_Weather/Weather_HTTPS.h"
+#include "IOT/OTA/OTA.h"
 #include "config.h"
 
 static const char* TAG="FreeRTOS_Task";
@@ -172,11 +175,98 @@ void Network_Task(){
 }
 
 void OTA_Task(){
-    xEventGroupWaitBits(wifi_ev,WIFI_CONNECTED_BIT,pdFALSE,pdTRUE,portMAX_DELAY);
-    xEventGroupWaitBits(wifi_ev, OTA_DOWNLOAD_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
+    // ① 等 WiFi
+    xEventGroupWaitBits(wifi_ev, BIT0, pdFALSE, pdTRUE, portMAX_DELAY);
+
+    while (1){
+        // ② 等按钮按下
+        xEventGroupWaitBits(wifi_ev, BIT2, pdFALSE, pdTRUE, portMAX_DELAY);
+        xEventGroupClearBits(wifi_ev, BIT2);   // 清掉，避免重复
+
+        Ota_Send_Progress(0, "Checking...");
+
+        // ③ 连接服务器
+        esp_http_client_config_t http_cfg = {
+            .url = OTA_FW_URL,
+            .method = HTTP_METHOD_GET,
+            .timeout_ms = 15000,
+        };
+        esp_http_client_handle_t client = esp_http_client_init(&http_cfg);
+
+        esp_err_t err = esp_http_client_open(client, 0);
+        if (err != ESP_OK) {
+            Ota_Send_Progress(0, "No connection");
+            esp_http_client_cleanup(client);
+            goto hide_bar_and_retry;
+        }
+
+        int content_len = esp_http_client_fetch_headers(client);
+        int status_code = esp_http_client_get_status_code(client);
+        if (status_code != 200 || content_len <= 0) {
+            Ota_Send_Progress(0, "No update");
+            esp_http_client_close(client);
+            esp_http_client_cleanup(client);
+            goto hide_bar_and_retry;
+        }
+
+        // ④ 开始 OTA 写入
+        const esp_partition_t *update_part = esp_ota_get_next_update_partition(NULL);
+        esp_ota_handle_t ota_handle;
+        err = esp_ota_begin(update_part, OTA_WITH_SEQUENTIAL_WRITES, &ota_handle);
+        if (err != ESP_OK) {
+            Ota_Send_Progress(0, "OTA init fail");
+            esp_http_client_close(client);
+            esp_http_client_cleanup(client);
+            goto hide_bar_and_retry;
+        }
+
+        // ⑤ 循环下载 + 更新进度条
+        int total_read = 0;
+        uint8_t buf[1024];
+        int last_pct = -1;
+        bool download_ok = true;
+
+        while (total_read < content_len) {
+            int rlen = esp_http_client_read(client, (char *)buf, sizeof(buf));
+            if (rlen <= 0) {
+                download_ok = false;
+                break;
+            }
+            esp_ota_write(ota_handle, buf, rlen);
+            total_read += rlen;
+
+            int pct = (int)((long long)total_read * 100 / content_len);
+            if (pct != last_pct) {
+                last_pct = pct;
+                Ota_Send_Progress(pct, "Downloading...");
+            }
+            vTaskDelay(1);
+        }
+
+        esp_http_client_close(client);
+        esp_http_client_cleanup(client);
+
+        if (download_ok) {
+            esp_ota_end(ota_handle);
+            Ota_Send_Progress(100, "Complete");
+            esp_ota_set_boot_partition(update_part);
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            esp_restart();      // 重启，不会回来了
+        }
+        // 下载失败：清理 OTA
+        esp_ota_end(ota_handle);
+
+    hide_bar_and_retry:
+        // 隐藏进度条，退回循环顶部继续等 BIT2
+        lvgl_port_lock(portMAX_DELAY);
+        lv_obj_add_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
+        lvgl_port_unlock();
+        // while(1) 自然回到顶部，重新等待 BIT2
+    }
 }
 
-static void Time_Weather_Task(){
+
+void Time_Weather_Task(){
     xEventGroupWaitBits(wifi_ev, WIFI_CONNECTED_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
     TickType_t last_wake_time=xTaskGetTickCount();
 

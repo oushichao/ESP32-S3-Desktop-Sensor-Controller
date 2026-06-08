@@ -17,9 +17,6 @@ extern bool    g_relay_state;
 /* 背光强度 */
 extern uint8_t backlight;
 
-/* 版本号*/
-extern char version[10] ;
-
 /* 时间*/
 extern char time_str[16];
 

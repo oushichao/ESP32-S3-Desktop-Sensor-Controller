@@ -8,8 +8,6 @@
 
 static const char* TAG ="NVS";
 nvs_handle  handle;
-// NVS.c 顶部加
-extern char version[10];
 
 void NVS_Write_Str(char* key,char* str){
     if(!str||!key)return;
@@ -74,7 +72,6 @@ void NVS_Read_Config(){
         return ;
     }
 
-    size_t len=sizeof(version);
     int32_t out_value;
     uint8_t out_value_0;
 
@@ -97,10 +94,6 @@ void NVS_Read_Config(){
     }
     else{
         nvs_set_u8(handle,"bl_level",backlight);
-    }
-
-    if(nvs_get_str(handle,"fw_version",version,&len)!=ESP_OK){
-        nvs_set_str(handle,"fw_version",version);
     }
 
     nvs_commit(handle);
