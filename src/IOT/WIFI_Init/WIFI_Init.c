@@ -14,12 +14,15 @@
 
 #include "WIFI_Init.h"
 #include "UI/UI_main.h"
+#include "UI/UI_data.h"
 
 #define MAX_RETRY   5
 
 static const char* TAG ="WIFI_INIT";
 static uint8_t reconnect=0;
 EventGroupHandle_t   wifi_ev;
+
+
 
 esp_netif_t *esp_netif;     //网络接口句柄,指定查询的网络接口
 
@@ -30,6 +33,7 @@ void Wifi_Event_Handler(void* event_handler_arg,esp_event_base_t event_base,int3
                 esp_wifi_connect();
                 break;
             case    WIFI_EVENT_STA_DISCONNECTED:
+                wifi_state=false;
                 if(++reconnect<=MAX_RETRY){
                     ESP_LOGI(TAG,"尝试重连,次数为%d/%d",reconnect,MAX_RETRY);
                     esp_wifi_connect();
@@ -49,6 +53,7 @@ void Wifi_Event_Handler(void* event_handler_arg,esp_event_base_t event_base,int3
                 xEventGroupSetBits(wifi_ev,WIFI_CONNECTED_BIT);   //确保wifi连接再进行MQTT
                 esp_netif_ip_info_t ip_info;
                 esp_netif_get_ip_info(esp_netif, &ip_info);
+                wifi_state=true;
                 ESP_LOGI(TAG, "获取的ip地址为:" IPSTR, IP2STR(&ip_info.ip));
                 break;
             }

@@ -2,6 +2,7 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_log.h"
 #include <stdlib.h>
+#include "freertos/task.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -10,7 +11,10 @@
 #include "IOT/Get_Weather_Time/Get_Time/Ntp_Time.h"
 #include "IOT/Get_Weather_Time/Get_Weather/Weather_Parse.h"
 #include "IOT/OTA/OTA.h"
+#include "NVS/NVS.h"
+#include "IOT/WIFI_Init/WIFI_Init.h"
 
+extern EventGroupHandle_t wifi_ev;
 
 /* ==========  Seeting控制刷新   ========== */
 lv_obj_t *label_tem_value   = NULL;
@@ -32,6 +36,9 @@ lv_obj_t *weather           =NULL;
 lv_obj_t *chart_temp        =NULL;
 lv_obj_t *chart_humi        =NULL;
 lv_obj_t *chart_light       =NULL;
+lv_chart_series_t *ser_tem  =NULL;
+lv_chart_series_t *ser_hum  =NULL;
+lv_chart_series_t *ser_light=NULL;
 
 
 extern int32_t g_temp_threshold;
@@ -43,11 +50,11 @@ extern bool    g_relay_state;
 extern char    time_str[16];
 extern char    current_weather[16];
 
-/* 
-    @brief 设置Home页的led显示颜色
-    @param obj  操作的对象
-    @param status   1:led显示绿色 0:led显示红色
-*/
+/**
+ *  @brief 设置Home页的led显示颜色
+ *  @param obj  操作的对象
+ *  @param status   1:led显示绿色 0:led显示红色
+ */
 void set_led_status(lv_obj_t *obj, bool status){
     if (status)
         lv_led_set_color(obj, lv_color_hex(0x00FF00));
@@ -64,50 +71,35 @@ void set_led_status(lv_obj_t *obj, bool status){
 // }
 
 
-/* ===== 回调 ===== */
-static void slider_released_tem(lv_event_t *e)
-{
+/* ===== 温度阈值回调 ===== */
+static void slider_released_tem(lv_event_t *e){
     lv_obj_t *slider = lv_event_get_current_target(e);
     g_temp_threshold = (int32_t)lv_slider_get_value(slider);
-    if (label_tem_value) {
-        lv_label_set_text_fmt(label_tem_value, "%ld", (long)g_temp_threshold);
-    }
+    NVS_Write_int32_t("temp_thresh", g_temp_threshold);
 }
-
-static void slider_released_hum(lv_event_t *e)
-{
+/* ===== 湿度阈值回调 ===== */
+static void slider_released_hum(lv_event_t *e){
     lv_obj_t *slider = lv_event_get_target(e);
     g_humi_threshold = (int32_t)lv_slider_get_value(slider);
-    if (label_hum_value) {
-        lv_label_set_text_fmt(label_hum_value, "%ld", (long)g_humi_threshold);
-    }
+    NVS_Write_int32_t("humi_thresh", g_humi_threshold);
 }
-
-static void slider_released_light(lv_event_t *e)
-{
+/* ===== 背光强度回调 ===== */
+static void slider_released_light(lv_event_t *e){
     lv_obj_t *slider = lv_event_get_target(e);
     backlight = (uint8_t)lv_slider_get_value(slider);
-    if (label_back_value) {
-        lv_label_set_text_fmt(label_back_value, "%u", (unsigned)backlight);
-    }
+    NVS_Write_uint8_t("bl_level", backlight); 
 }
-
-
-
-static void switch_value_rel(lv_event_t *e)
-{
+/* ===== 继电器开关回调 ===== */
+static void switch_value_rel(lv_event_t *e){
     lv_obj_t *sw = lv_event_get_target(e);
     g_relay_state = lv_obj_has_state(sw, LV_STATE_CHECKED);
-    if (label_home_relay) {
-        lv_label_set_text(label_home_relay, g_relay_state ? "True" : "False");
-    }
 }
-
-
+/* ===== OTA升级进度条 ===== */
 static void button_check_update(lv_event_t *e){// OTA
-    lv_obj_t* bt=lv_event_get_target(e);
     // 显示进度条
     lv_obj_clear_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
+    lv_bar_set_value(progress_bar,0,LV_ANIM_OFF);
+    xEventGroupSetBits(wifi_ev, OTA_DOWNLOAD_BIT);
 }
 
 /* ===== UI 入口 ===== */
@@ -147,7 +139,6 @@ void UI_init(void){
     lv_led_on(led_mqtt);
 
     // 时间和天气
-    Get_Time_Str(time_str,(size_t)32);
     current_timer = lv_label_create(tab_home);
     lv_obj_set_pos(current_timer, 10, 50);
     lv_label_set_text(current_timer,time_str);
@@ -199,12 +190,6 @@ void UI_init(void){
 
 
     /* ---- Chart 页 ---- */
-    int32_t fake_temp[30] = {
-        -20, -15, -10, -5, 0, 5, 10, 15,
-         25,  35,  45, 55, 60, 55, 45, 35,
-         20,  10,   0, -10, -15, -10, 5, 15,
-         25,  35,  40, 30, 20, 10
-    };
 
     //温度曲线
     chart_temp = lv_chart_create(tab_chart);
@@ -212,12 +197,9 @@ void UI_init(void){
     lv_obj_set_size(chart_temp, 200, 60);
     lv_chart_set_type(chart_temp, LV_CHART_TYPE_LINE);
     lv_chart_set_point_count(chart_temp, 30);
-    lv_chart_set_range(chart_temp, LV_CHART_AXIS_PRIMARY_Y, -20, 60);
-    lv_chart_series_t *ser = lv_chart_add_series(chart_temp,
+    lv_chart_set_range(chart_temp, LV_CHART_AXIS_PRIMARY_Y, -400, 1250);
+    ser_tem = lv_chart_add_series(chart_temp,
         lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
-    for (int j = 0; j < 30; j++)
-        lv_chart_set_next_value(chart_temp, ser, fake_temp[j]);
-    lv_chart_refresh(chart_temp);
 
     lv_obj_t *temp_x = lv_label_create(tab_chart);
     lv_label_set_text(temp_x, "Temp/Time");
@@ -228,6 +210,11 @@ void UI_init(void){
     lv_obj_set_pos(chart_humi, 10, 85);
     lv_obj_set_size(chart_humi, 200, 60);
     lv_chart_set_type(chart_humi, LV_CHART_TYPE_LINE);
+    lv_chart_set_point_count(chart_humi, 30);
+    lv_chart_set_range(chart_humi, LV_CHART_AXIS_PRIMARY_Y, 0, 1000);
+    ser_hum = lv_chart_add_series(chart_humi,
+        lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
+
     lv_obj_t *humi_x = lv_label_create(tab_chart);
     lv_label_set_text(humi_x, "Humi/Time");
     lv_obj_align_to(humi_x, chart_humi, LV_ALIGN_OUT_BOTTOM_MID, 0, 5);
@@ -237,6 +224,11 @@ void UI_init(void){
     lv_obj_set_pos(chart_light, 10, 170);
     lv_obj_set_size(chart_light, 200, 60);
     lv_chart_set_type(chart_light, LV_CHART_TYPE_LINE);
+    lv_chart_set_point_count(chart_light, 30);
+    lv_chart_set_range(chart_light, LV_CHART_AXIS_PRIMARY_Y, 0, 54612);
+    ser_light = lv_chart_add_series(chart_light,
+        lv_palette_main(LV_PALETTE_RED), LV_CHART_AXIS_PRIMARY_Y);
+
     lv_obj_t *light_x = lv_label_create(tab_chart);
     lv_label_set_text(light_x, "Light/Time");
     lv_obj_align_to(light_x, chart_light, LV_ALIGN_OUT_BOTTOM_MID, 0, 5);

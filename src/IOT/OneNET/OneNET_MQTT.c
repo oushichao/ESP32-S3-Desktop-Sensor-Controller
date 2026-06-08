@@ -9,11 +9,13 @@
 #include "OneNET_Token.h"
 #include "OneNET_dm.h"
 #include "config.h"
+#include "UI/UI_data.h"
 
 #define TAG "onenet"
 
 esp_mqtt_client_handle_t    mqtt_handler=NULL;
 extern EventGroupHandle_t   wifi_ev;
+
 
 static void OneNET_Property_Ack(const char* id,int code,const char* msg);
 static void OneNET_Subscribe();
@@ -26,8 +28,9 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base,
 
     switch ((esp_mqtt_event_id_t)event_id){
         case MQTT_EVENT_CONNECTED:
+            mqtt_state=true;
             ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
-            xEventGroupSetBits(wifi_ev, BIT1);
+            xEventGroupSetBits(wifi_ev, MQTT_CONNECT_BIT);
             OneNET_Subscribe();
             //上报数据,为了数据同步
             cJSON* property_js=OneNET_Property_Upload();           
@@ -36,21 +39,13 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base,
             cJSON_free(data);
             cJSON_Delete(property_js);
             break;
+        
+        case MQTT_EVENT_DELETED:
+            mqtt_state=false;
+            break;
 
         case MQTT_EVENT_DISCONNECTED:
-            ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
-            break;
-
-        case MQTT_EVENT_SUBSCRIBED:
-            ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-            break;
-
-        case MQTT_EVENT_UNSUBSCRIBED:
-            ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
-            break;
-
-        case MQTT_EVENT_PUBLISHED:
-            ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+            mqtt_state=false;
             break;
 
         case MQTT_EVENT_DATA:   //onenet平台下行任何数据都会进入
@@ -75,10 +70,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base,
                 OneNET_Property_Ack(cJSON_GetStringValue(id_js),200,"success");
                 cJSON_Delete(property);
             }
-            break;
-
-        case MQTT_EVENT_ERROR:
-            ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
             break;
 
         default:
@@ -159,5 +150,5 @@ esp_err_t Connect_Post_Data(const char*data){
     char topic[128];
     snprintf(topic,128,"$sys/%s/%s/thing/property/post",ONENET_PRODUCT_ID,ONENET_DEVICE_NAME);
     ESP_LOGI(TAG,"Upload topic:%s,payload:%s",topic,data);
-    return esp_mqtt_client_publish(mqtt_handler,topic,data,strlen(data),0,0);
+    return esp_mqtt_client_publish(mqtt_handler,topic,data,strlen(data),0,1);
 }

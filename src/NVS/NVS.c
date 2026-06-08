@@ -8,6 +8,8 @@
 
 static const char* TAG ="NVS";
 nvs_handle  handle;
+// NVS.c 顶部加
+extern char version[10];
 
 void NVS_Write_Str(char* key,char* str){
     if(!str||!key)return;
@@ -65,7 +67,8 @@ void NVS_Write_uint8_t(char* key,uint8_t value){
     ESP_LOGI(TAG,"[%s]nvs write success!!!",__func__);
 }
 
-void NVS_Read_config(){
+void NVS_Read_Config(){
+    nvs_flash_init();
     if(nvs_open("config",NVS_READWRITE,&handle)!=ESP_OK){
         ESP_LOGE(TAG,"nvs open fail!!!");
         return ;

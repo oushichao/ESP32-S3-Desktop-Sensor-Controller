@@ -1,5 +1,8 @@
 #pragma once
 #include <stdio.h>
+
+#define OTA_DOWNLOAD_BIT    BIT2
+
 /* ===== OTA 下载进度 ===== */
 typedef struct {
     uint8_t  percent;       /* 0–100 */

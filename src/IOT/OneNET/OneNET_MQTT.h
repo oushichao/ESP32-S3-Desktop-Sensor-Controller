@@ -5,6 +5,8 @@
 #include "esp_log.h"
 #include <stdio.h>
 
+#define MQTT_CONNECT_BIT    BIT1
+
 esp_err_t OneNET_Start();
 esp_err_t Connect_Post_Data(const char*data);
 

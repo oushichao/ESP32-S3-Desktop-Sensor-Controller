@@ -4,5 +4,5 @@
 #define RELAY_GPIO  GPIO_NUM_5
 #define LED_GPIO    GPIO_NUM_38
 
-void Led_init();
-void Relay_init();
+void Relay_Init();
+void Relay_Set(bool on);

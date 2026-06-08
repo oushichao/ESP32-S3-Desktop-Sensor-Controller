@@ -8,7 +8,7 @@ managed_components/
 build/
 dist/
 
-components/lvgl/
+components/
 
 # ==============================
 # ESP-IDF 自动生成文件

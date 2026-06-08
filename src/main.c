@@ -8,56 +8,43 @@
 #include "esp_lvgl_port.h"
 
 #include "Device/LCD/LCD_Init.h"
+#include "Device/LCD/FT6336_Touch.h"
 #include "Device/BH1750/BH1750.h"
 #include "Device/SHT30/SHT30.h"
-#include "Device/LCD/FT6336_Touch.h"
-#include "Device/Relay_And_Led/Relay_And_Led.h"
+#include "Device/Relay/Relay.h"
 #include "UI/UI_main.h"
 #include "UI/UI_data.h"
-#include "IOT/Get_Weather_Time/Get_Time/Ntp_Time.h"
 #include "IOT/WIFI_Init/WIFI_Init.h"
+#include "IOT/OneNET/OneNET_MQTT.h"
+#include "IOT/Get_Weather_Time/Get_Time/Ntp_Time.h"
 #include "IOT/Get_Weather_Time/Get_Weather/Weather_HTTPS.h"
 #include "IOT/Get_Weather_Time/Get_Weather/Weather_Parse.h"
+#include "MY_I2C/MY_I2C.h"
+#include "NVS/NVS.h"
 #include "config.h"
 
 // pio run -t monitor
 //static const char* TAG="mian";
 
 
-// static void network_task(void *arg)
-// {
-//     // 等待 WiFi 连上
-//     xEventGroupWaitBits(wifi_ev, WIFI_CONNECTED_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
 
-//     NTP_Init();
-//     Get_Time_Str(time_str,16);
-//     ESP_LOGI(TAG,"当前时间为:%s",time_str);
-//     char *json = Weather_HTTPS_Fetch_Now(CITY_ID, API_KEY);
-//     if (json) {
-//         if (Weather_Parse_Now(json)) {
-//             ESP_LOGI("WEATHER", "天气: %s", current_weather);
-//         }
-//         free(json);
-//     }
-
-//     vTaskDelete(NULL);
-// }
 
 void app_main()
 {
     setenv("TZ", "CST-8", 1);
     tzset();
-
+    NVS_Read_Config();
+    BH1750_Init();
+    SHT30_Init();
+    Relay_Init();
     //Wifi_Sta_Init();
 
-    // 屏幕 + UI
-    Lvgl_Start();
-    lvgl_port_lock(portMAX_DELAY);
-    UI_init();
-    lvgl_port_unlock();
+    // Lvgl_Start();
+    // lvgl_port_lock(portMAX_DELAY);
+    // UI_init();
+    // lvgl_port_unlock();
+    //OneNET_Start():
 
-    //网络操作在后台任务，不阻塞
-    //xTaskCreate(network_task, "network", 16384, NULL, 5, NULL);  // 8KB → 16KB
 }
 
 

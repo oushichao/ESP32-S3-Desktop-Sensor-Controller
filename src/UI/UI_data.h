@@ -25,3 +25,7 @@ extern char time_str[16];
 
 /*天气*/
 extern char current_weather[16];
+
+/*指示灯状态*/
+extern bool mqtt_state;
+extern bool wifi_state;
