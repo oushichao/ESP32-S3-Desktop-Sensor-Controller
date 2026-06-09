@@ -25,7 +25,7 @@
 
 static const char* TAG="FreeRTOS_Task";
 //总线任务
-#define TOTAL_TASK_SIZE             2*1024
+#define TOTAL_TASK_SIZE             4*1024
 #define TOTAL_TASK_PRIO             5
 TaskHandle_t    Total_Task_Handle;
 
@@ -50,7 +50,7 @@ TaskHandle_t    Network_Task_Handle;
 TaskHandle_t    OTA_Task_Handle;
 
 //天气获取，时间同步
-#define TIME_WEATHER_TASK_SIZE      4*1024
+#define TIME_WEATHER_TASK_SIZE      16*1024
 #define TIME_WEATHER_TASK_PRIO      5
 TaskHandle_t  Time_Weather_Handle;
 
@@ -88,8 +88,8 @@ void Gui_Task(){
     while(1){
         if (lvgl_port_lock(pdMS_TO_TICKS(100))) {
             // ---- 指示灯 ----
-            if(led_wifi)set_led_status(led_wifi,wifi_state);
-            if(led_mqtt)set_led_status(led_mqtt,mqtt_state);
+            if(led_wifi)Set_Led_Status(led_wifi,wifi_state);
+            if(led_mqtt)Set_Led_Status(led_mqtt,mqtt_state);
             // ---- 时间 ----
             Get_Time_Str(time_str, 16);
             if (current_timer) {
@@ -119,6 +119,14 @@ void Gui_Task(){
             if (label_back_value) {
                 lv_label_set_text_fmt(label_back_value, "%u", (unsigned)backlight);
                 Backlight_Set(backlight);
+            }
+            // ---- 温度阈值标签 ----
+            if (label_tem_value) {
+                lv_label_set_text_fmt(label_tem_value, "%ld", (long)g_temp_threshold);
+            }
+            // ---- 湿度阈值标签 ----
+            if (label_hum_value) {
+                lv_label_set_text_fmt(label_hum_value, "%ld", (long)g_humi_threshold);
             }
             // ---- 继电器状态 ----
             if (label_home_relay) {
@@ -159,13 +167,13 @@ void Sensor_Task(){
     while(1){
         BH1750_ReadData(&g_light);
         SHT30_Read_Data(&g_temperature,&g_humidity);
-        ESP_LOGI(TAG,"Tem:%d.Hum:%d.Light:%d",g_temperature,g_humidity,g_light);
         vTaskDelayUntil(&last_wake_time,pdMS_TO_TICKS(1000));
     }
 }
 
 void Network_Task(){
     xEventGroupWaitBits(wifi_ev,WIFI_CONNECTED_BIT,pdFALSE,pdTRUE,portMAX_DELAY);
+    OneNET_Start();
     xEventGroupWaitBits(wifi_ev, MQTT_CONNECT_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
     TickType_t last_wake_time=xTaskGetTickCount();
     while(1){

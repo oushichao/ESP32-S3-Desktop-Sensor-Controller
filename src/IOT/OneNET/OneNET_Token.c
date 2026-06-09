@@ -346,8 +346,8 @@ static void calc_hmd(enum sig_method_e method,unsigned char* key,size_t key_len,
 int32_t
 dev_token_generate(char* token, enum sig_method_e method, uint32_t exp_time, const char* product_id, const char* dev_name, const char* access_key)
 {
-    uint8_t  base64_data[64] = { 0 };
-    uint8_t  str_for_sig[64] = { 0 };
+    uint8_t  base64_data[128] = { 0 };
+    uint8_t  str_for_sig[128] = { 0 };
     uint8_t  sign_buf[128]   = { 0 };
     unsigned int base64_data_len = sizeof(base64_data);
     uint8_t* sig_method_str  = NULL;

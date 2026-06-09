@@ -81,7 +81,7 @@ void OTA_Rollback_Check(){
  * @brief   覆盖式的队列用于传递当前下载进度
  */
 void Ota_Task_Init(){
-    ota_progress_queue = xQueueCreate(2, sizeof(ota_progress_t));
+    ota_progress_queue = xQueueCreate(1, sizeof(ota_progress_t));
 }
 
 /**

@@ -31,7 +31,7 @@ esp_err_t LCD_FT6336_Touch_Init(esp_lcd_touch_handle_t* ret_touch){
     esp_lcd_touch_config_t th_cfg={
         .x_max          =   LCD_HOR_RES,
         .y_max          =   LCD_VER_RES,
-        .rst_gpio_num   =   GPIO_NUM_NC,
+        .rst_gpio_num   =   TOUCH_RST,
         .int_gpio_num   =   TOUCH_INT,
         .levels={
             .interrupt  =   false,

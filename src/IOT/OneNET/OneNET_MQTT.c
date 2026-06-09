@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "cJSON.h"
+#include "esp_crt_bundle.h"
 
 #include "OneNET_MQTT.h"
 #include "OneNET_Token.h"
@@ -82,8 +83,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base,
 esp_err_t OneNET_Start(){
     esp_mqtt_client_config_t    mqtt_config;
     memset(&mqtt_config,0,sizeof(esp_mqtt_client_config_t));
-    mqtt_config.broker.address.uri="mqtt://mqtts.heclouds.com";
-    mqtt_config.broker.address.port=1883;
+    mqtt_config.broker.address.uri  = "mqtt://mqtts.heclouds.com"; 
+    mqtt_config.broker.address.port = 1883;                         
 
     mqtt_config.credentials.client_id=ONENET_DEVICE_NAME;   //设备名称
     mqtt_config.credentials.username=ONENET_PRODUCT_ID;     //产品ID
@@ -96,6 +97,7 @@ esp_err_t OneNET_Start(){
         ONENET_DEVICE_NAME,         //设备名称
         ONENET_PRODUCT_ACCESS_KEY   //产品访问密钥        
     );
+    ESP_LOGI(TAG, "Token: %s", token);   // ← 加这行
     //把生成的Token，设置为MQTT连接密码
     mqtt_config.credentials.authentication.password=token;
 

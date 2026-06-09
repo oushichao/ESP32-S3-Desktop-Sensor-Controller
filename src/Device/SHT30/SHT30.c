@@ -51,26 +51,3 @@ void SHT30_Read_Data(float *temperature, float *humidity)
     *temperature = -45.0f + 175.0f * ((float)raw_temp / 65535.0f);
     *humidity    = 100.0f * ((float)raw_humi / 65535.0f);
 }
-// void SHT30_Read_Data(float* temperature,float* humidity){
-//     uint8_t data[6]={0};
-//     //[温度高8位][温度低8位][温度CRC][湿度高8位][湿度低8位][湿度CRC]----周期1s
-//     if(sht30_handle==NULL||temperature==NULL||humidity==NULL)return;
-
-//     esp_err_t err = i2c_master_receive(sht30_handle,data,6,pdMS_TO_TICKS(100));
-//     if(err != ESP_OK){
-//         ESP_LOGE("SHT30","I2C read failed: %s", esp_err_to_name(err));
-//         *temperature = -45.0f;
-//         *humidity = 0.0f;
-//         return;
-//     }    
-//     uint16_t raw_temp = (data[0] << 8) | data[1];
-//     uint16_t raw_humi = (data[3] << 8) | data[4];    
-
-//     *temperature=-45 + 175 * (raw_temp / 65535.0);
-//     *humidity=100 * (raw_humi / 65535.0);
-//     // # 温度计算（单位：℃）
-//     // temp = -45 + 175 * (raw_temp / 65535.0)
-
-//     // # 湿度计算（单位：%RH）
-//     // humidity = 100 * (raw_humidity / 65535.0)
-// }

@@ -21,7 +21,7 @@ void NTP_Init(){
         num++;
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
-    ESP_LOGI(TAG,"连接成功!!!");
+    ESP_LOGI(TAG,"获取时间成功!!!");
 }
 
 void Get_Time_Str(char* buf,size_t buflen){ //获取当前时间

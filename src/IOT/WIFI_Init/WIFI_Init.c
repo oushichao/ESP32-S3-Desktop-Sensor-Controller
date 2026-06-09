@@ -95,5 +95,6 @@ void Wifi_Sta_Init(){
 
     esp_wifi_set_config(WIFI_IF_STA,&wifi_config);          //配置写入sta模式
     esp_wifi_start();                                       //wifi开始工作
+    esp_wifi_set_max_tx_power(8);                           //降低wifi发射功率
 }
 

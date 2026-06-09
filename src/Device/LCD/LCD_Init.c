@@ -92,11 +92,12 @@ static lv_disp_t* LCD_Display_Init(){
     lvgl_port_display_cfg_t disp_cfg={
         .io_handle      =   io_handle,
         .panel_handle   =   panel_handle,
-        .buffer_size    =   LCD_HOR_RES*15,    //缓存
-        .double_buffer  =   true,                       //开启双缓存
+        .buffer_size    =   LCD_HOR_RES*15,             //缓存
+        .double_buffer  =   true,                       //是否开启双缓存
         .hres           =   LCD_HOR_RES,                //宽
         .vres           =   LCD_VER_RES,                //高
         .monochrome     =   false,                      //是否单色显示器
+        //.color_format   =   LV_COLOR_FORMAT_RGB565,
         .rotation={     //配置与LCD_ili9341_Init()一致
             .mirror_x   =   true,
             .mirror_y   =   false,
@@ -105,6 +106,7 @@ static lv_disp_t* LCD_Display_Init(){
         .flags={        //不能同时为true
             .buff_spiram=   false,                      //是否使用PSRAM
             .buff_dma   =   true,                       //是否使用DMA
+            .swap_bytes =   true                        //大端序交换
         },
     };
     return lvgl_port_add_disp(&disp_cfg);
@@ -177,7 +179,7 @@ void LCD_ili9341_Init(){
     esp_lcd_panel_io_spi_config_t   io_config_t={
         .cs_gpio_num        =   LCD_SPI_CS,     //片选引脚
         .dc_gpio_num        =   LCD_SPI_DC,     //数据/命令选择脚
-        .pclk_hz            =   10*1000*1000,   //时钟频率
+        .pclk_hz            =   5*1000*1000,   //时钟频率
         .trans_queue_depth  =   10,             //队列深度，可并发处理请求
         .lcd_cmd_bits       =   8,              //参数字段位宽。固定为8
         .spi_mode           =   0,              //模式0
@@ -189,8 +191,8 @@ void LCD_ili9341_Init(){
     // 初始化液晶屏驱动芯片ili9341
     esp_lcd_panel_dev_config_t  panel_fig={
         .reset_gpio_num     =   LCD_SPI_RST,
-        .rgb_ele_order      =   LCD_RGB_ELEMENT_ORDER_RGB,  
-        .bits_per_pixel     =   16,                         //RGB565
+        .rgb_ele_order      =   LCD_RGB_ELEMENT_ORDER_BGR,  
+        .bits_per_pixel     =   16,             //RGB565            
     };
     //面板实例
     esp_lcd_new_panel_ili9341(io_handle,&panel_fig,&panel_handle);

@@ -55,20 +55,12 @@ extern char    current_weather[16];
  *  @param obj  操作的对象
  *  @param status   1:led显示绿色 0:led显示红色
  */
-void set_led_status(lv_obj_t *obj, bool status){
+void Set_Led_Status(lv_obj_t *obj, bool status){
     if (status)
         lv_led_set_color(obj, lv_color_hex(0x00FF00));
     else
         lv_led_set_color(obj, lv_color_hex(0xFF0000));
 }
-
-// static void slider_debug_cb(lv_event_t *e)
-// {
-//     lv_obj_t *slider = lv_event_get_current_target(e);
-//     lv_event_code_t code = lv_event_get_code(e);
-//     int32_t val = lv_slider_get_value(slider);
-//     ESP_LOGI("SLIDER", "event=%d val=%ld", (int)code, (long)val);
-// }
 
 
 /* ===== 温度阈值回调 ===== */
@@ -95,14 +87,14 @@ static void switch_value_rel(lv_event_t *e){
     g_relay_state = lv_obj_has_state(sw, LV_STATE_CHECKED);
 }
 /* ===== OTA升级进度条 ===== */
-static void button_check_update(lv_event_t *e){// OTA
+static void button_check_update(lv_event_t *e){
     // 显示进度条
     lv_obj_clear_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
     xEventGroupSetBits(wifi_ev, OTA_DOWNLOAD_BIT);
 }
 
 /* ===== UI 入口 ===== */
-void UI_init(void){
+void UI_Init(void){
 
     lv_obj_t *tabview = lv_tabview_create(lv_screen_active());
     lv_tabview_set_tab_bar_position(tabview, LV_DIR_BOTTOM);
@@ -123,7 +115,7 @@ void UI_init(void){
     led_wifi = lv_led_create(tab_home);
     lv_obj_set_size(led_wifi, 10, 10);
     lv_obj_set_pos(led_wifi, 70, 15);
-    set_led_status(led_wifi, false);
+    Set_Led_Status(led_wifi, false);
     lv_led_on(led_wifi);
 
     //mqtt指示
@@ -134,7 +126,7 @@ void UI_init(void){
     led_mqtt = lv_led_create(tab_home);
     lv_obj_set_size(led_mqtt, 10, 10);
     lv_obj_set_pos(led_mqtt, 185, 15);
-    set_led_status(led_mqtt, false);
+    Set_Led_Status(led_mqtt, false);
     lv_led_on(led_mqtt);
 
     // 时间和天气
