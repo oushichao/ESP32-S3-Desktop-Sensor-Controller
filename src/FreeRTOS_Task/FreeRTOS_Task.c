@@ -8,7 +8,6 @@
 #include "esp_http_client.h"
 #include "esp_ota_ops.h"
 
-#include "IOT/OTA/OTA.h"
 #include "Device/BH1750/BH1750.h"
 #include "Device/SHT30/SHT30.h"
 #include "Device/Relay/Relay.h"
@@ -81,8 +80,11 @@ extern lv_chart_series_t *ser_light;
 extern bool wifi_state;
 extern bool mqtt_state;
 
+extern QueueHandle_t ota_progress_queue;
+
 void Gui_Task(){
     TickType_t last_wake_time=xTaskGetTickCount();
+    ota_progress_t p_gui;
     while(1){
         if (lvgl_port_lock(pdMS_TO_TICKS(100))) {
             // ---- 指示灯 ----
@@ -126,7 +128,6 @@ void Gui_Task(){
                     Relay_Set(g_relay_state);
                     last_relay_state = g_relay_state;
                 }
-
             }
             // ---- 温度折线图 ----
             if(chart_temp&&ser_tem){
@@ -143,8 +144,11 @@ void Gui_Task(){
                 lv_chart_set_next_value(chart_light, ser_light,(int32_t)(g_light));
                 lv_chart_refresh(chart_light);
             }
+            //  ---- OTA下载进度 ----
+            if(progress_bar&&xQueueReceive(ota_progress_queue,&p_gui,0)==pdTRUE){
+                lv_bar_set_value(progress_bar,p_gui.percent,LV_ANIM_OFF); 
+            }
             lvgl_port_unlock();
-
         }
         vTaskDelayUntil(&last_wake_time,pdMS_TO_TICKS(1000));
     }
@@ -175,17 +179,14 @@ void Network_Task(){
 }
 
 void OTA_Task(){
-    // ① 等 WiFi
-    xEventGroupWaitBits(wifi_ev, BIT0, pdFALSE, pdTRUE, portMAX_DELAY);
+    xEventGroupWaitBits(wifi_ev, WIFI_CONNECTED_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
 
     while (1){
-        // ② 等按钮按下
-        xEventGroupWaitBits(wifi_ev, BIT2, pdFALSE, pdTRUE, portMAX_DELAY);
-        xEventGroupClearBits(wifi_ev, BIT2);   // 清掉，避免重复
+        xEventGroupWaitBits(wifi_ev, OTA_DOWNLOAD_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
+        xEventGroupClearBits(wifi_ev, OTA_DOWNLOAD_BIT);   // 清掉，避免重复
 
         Ota_Send_Progress(0, "Checking...");
 
-        // ③ 连接服务器
         esp_http_client_config_t http_cfg = {
             .url = OTA_FW_URL,
             .method = HTTP_METHOD_GET,
@@ -203,24 +204,22 @@ void OTA_Task(){
         int content_len = esp_http_client_fetch_headers(client);
         int status_code = esp_http_client_get_status_code(client);
         if (status_code != 200 || content_len <= 0) {
-            Ota_Send_Progress(0, "No update");
+            Ota_Send_Progress(0, "No update available");
             esp_http_client_close(client);
             esp_http_client_cleanup(client);
             goto hide_bar_and_retry;
         }
 
-        // ④ 开始 OTA 写入
         const esp_partition_t *update_part = esp_ota_get_next_update_partition(NULL);
         esp_ota_handle_t ota_handle;
         err = esp_ota_begin(update_part, OTA_WITH_SEQUENTIAL_WRITES, &ota_handle);
         if (err != ESP_OK) {
-            Ota_Send_Progress(0, "OTA init fail");
+            Ota_Send_Progress(0, "No update available");
             esp_http_client_close(client);
             esp_http_client_cleanup(client);
             goto hide_bar_and_retry;
         }
 
-        // ⑤ 循环下载 + 更新进度条
         int total_read = 0;
         uint8_t buf[1024];
         int last_pct = -1;
@@ -248,20 +247,20 @@ void OTA_Task(){
 
         if (download_ok) {
             esp_ota_end(ota_handle);
-            Ota_Send_Progress(100, "Complete");
+            Ota_Send_Progress(100, "Update complete");
             esp_ota_set_boot_partition(update_part);
             vTaskDelay(pdMS_TO_TICKS(1000));
-            esp_restart();      // 重启，不会回来了
+            esp_restart();      // 重启
         }
-        // 下载失败：清理 OTA
-        esp_ota_end(ota_handle);
+        else{
+            esp_ota_end(ota_handle);
+        }
 
     hide_bar_and_retry:
         // 隐藏进度条，退回循环顶部继续等 BIT2
         lvgl_port_lock(portMAX_DELAY);
         lv_obj_add_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
         lvgl_port_unlock();
-        // while(1) 自然回到顶部，重新等待 BIT2
     }
 }
 

@@ -33,7 +33,7 @@ void app_main()
     setenv("TZ", "CST-8", 1);
     tzset();
     ESP_LOGI(TAG, "当前版本: %s", Get_App_Version());
-
+    Ota_Task_Init();
     NVS_Read_Config();
     BH1750_Init();
     SHT30_Init();

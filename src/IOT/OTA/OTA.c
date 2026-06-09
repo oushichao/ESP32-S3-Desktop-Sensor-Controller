@@ -89,106 +89,12 @@ void Ota_Task_Init(){
  * @param percent   下载百分比
  * @param statue    状态文本
  */
-void Ota_Send_Progress(int percent, const char *status){
+void Ota_Send_Progress(uint8_t percent, const char *status){
     ota_progress_t p;
     p.percent = percent;
     strncpy(p.status, status, sizeof(p.status) - 1);
     p.status[sizeof(p.status) - 1] = '\0';
-    xQueueOverwrite(ota_progress_queue, &p);    //队列满的话直接覆盖
-}
-
-static void ota_download_task(){
-    Ota_Send_Progress(0, "Checking...");
-
-    /* 等 WiFi（5 秒超时） */
-    EventBits_t bits = xEventGroupWaitBits(
-        wifi_ev, WIFI_CONNECTED_BIT,
-        pdFALSE, pdTRUE, pdMS_TO_TICKS(5000));
-    if (!(bits & WIFI_CONNECTED_BIT)) {
-        Ota_Send_Progress(0, "WiFi not connected");
-        vTaskDelete(NULL);
-        return;
-    }
-
-    /* 配置 HTTP 客户端 */
-    esp_http_client_config_t http_cfg = {
-        .url = OTA_FW_URL,
-        .method = HTTP_METHOD_GET,
-        .timeout_ms = 15000,
-    };
-    esp_http_client_handle_t client = esp_http_client_init(&http_cfg);
-
-    esp_err_t err = esp_http_client_open(client, 0);
-    if (err != ESP_OK) {
-        Ota_Send_Progress(0, "No update available");
-        esp_http_client_cleanup(client);
-        vTaskDelete(NULL);
-        return;
-    }
-
-    int content_len = esp_http_client_fetch_headers(client);
-    int status_code = esp_http_client_get_status_code(client);
-    if (status_code != 200 || content_len <= 0) {
-        Ota_Send_Progress(0, "No update available");
-        esp_http_client_close(client);
-        esp_http_client_cleanup(client);
-        vTaskDelete(NULL);
-        return;
-    }
-
-    const esp_partition_t *update_part = esp_ota_get_next_update_partition(NULL);
-    esp_ota_handle_t ota_handle;
-    err = esp_ota_begin(update_part, OTA_WITH_SEQUENTIAL_WRITES, &ota_handle);
-    if (err != ESP_OK) {
-        Ota_Send_Progress(0, "OTA init failed");
-        esp_http_client_close(client);
-        esp_http_client_cleanup(client);
-        vTaskDelete(NULL);
-        return;
-    }
-
-    int total_read = 0;
-    uint8_t buf[1024];
-    int last_pct = -1;
-
-    while (total_read < content_len) {
-        int rlen = esp_http_client_read(client, (char *)buf, sizeof(buf));
-        if (rlen <= 0) break;
-        esp_ota_write(ota_handle, buf, rlen);
-        total_read += rlen;
-
-        int pct = (int)((long long)total_read * 100 / content_len);
-        if (pct != last_pct) {
-            last_pct = pct;
-            Ota_Send_Progress(pct, "Downloading...");
-        }
-
-        vTaskDelay(1);
-    }
-
-    esp_http_client_close(client);
-    esp_http_client_cleanup(client);
-
-    err = esp_ota_end(ota_handle);
-    if (err != ESP_OK) {
-        Ota_Send_Progress(0, "Verification failed");
-        vTaskDelete(NULL);
-        return;
-    }
-
-    Ota_Send_Progress(100, "Verifying...");
-    vTaskDelay(pdMS_TO_TICKS(500));
-
-    err = esp_ota_set_boot_partition(update_part);
-    if (err != ESP_OK) {
-        Ota_Send_Progress(0, "Boot partition fail");
-        vTaskDelete(NULL);
-        return;
-    }
-
-    Ota_Send_Progress(100, "Update complete");
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
-    esp_restart();
+    ESP_LOGI(TAG,"当前状态:%s",p.status);
+    xQueueOverwrite(ota_progress_queue, &p);    //覆写
 }
 
