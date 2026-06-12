@@ -18,7 +18,6 @@
 #include "UI/UI_main.h"
 #include "UI/UI_data.h"
 #include "IOT/WIFI_Init/WIFI_Init.h"
-#include "IOT/OneNET/OneNET_MQTT.h"
 #include "IOT/Get_Weather_Time/Get_Time/Ntp_Time.h"
 #include "IOT/Get_Weather_Time/Get_Weather/Weather_HTTPS.h"
 #include "IOT/Get_Weather_Time/Get_Weather/Weather_Parse.h"
@@ -27,6 +26,7 @@
 #include "NVS/NVS.h"
 #include "config.h"
 #include "FreeRTOS_Task/FreeRTOS_Task.h"
+#include "IOT/EMQX/EMQX.h"
 
 // pio run -t monitor
 static const char* TAG="mian";
@@ -56,6 +56,8 @@ void app_main(){
     /* ========== 4. WiFi + 回滚检查 ========== */
     Wifi_Sta_Init();
     OTA_Rollback_Check();   // 等 WiFi 10s 验证固件
+    /* ========== 5. EMQX初始化 ========== */
+    EMQX_Start();
     /* ========== 5. FreeRTOS 任务 ========== */
     Start_FreeROTS_Task();
 }

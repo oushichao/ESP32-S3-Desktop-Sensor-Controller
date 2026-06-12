@@ -14,13 +14,13 @@
 #include "Device/LCD/LCD_Init.h"
 #include "UI/UI_data.h"
 #include "UI/UI_main.h"
-#include "IOT/OneNET/OneNET_dm.h"
-#include "IOT/OneNET/OneNET_MQTT.h"
 #include "IOT/WIFI_Init/WIFI_Init.h"
 #include "IOT/Get_Weather_Time/Get_Time/Ntp_Time.h"
 #include "IOT/Get_Weather_Time/Get_Weather/Weather_Parse.h"
 #include "IOT/Get_Weather_Time/Get_Weather/Weather_HTTPS.h"
 #include "IOT/OTA/OTA.h"
+#include "IOT/EMQX/EMQX.h"
+#include "IOT/EMQX/EMQX_dm.h"
 #include "config.h"
 
 static const char* TAG="FreeRTOS_Task";
@@ -59,6 +59,8 @@ extern lv_obj_t *label_tem_value;
 extern lv_obj_t *label_hum_value;
 extern lv_obj_t *label_back_value;
 extern lv_obj_t* progress_bar;
+extern lv_obj_t *temp_limit;
+extern lv_obj_t *humi_limit;
 /*===========  Home控制刷新  ===========*/
 extern lv_obj_t *led_wifi;
 extern lv_obj_t *led_mqtt;
@@ -80,7 +82,15 @@ extern lv_chart_series_t *ser_light;
 extern bool wifi_state;
 extern bool mqtt_state;
 
+typedef struct{
+    float temperature;
+    float humidity;
+    uint16_t light;
+}sensor_data_t;
+
 extern QueueHandle_t ota_progress_queue;
+QueueHandle_t sensor_gui_queue  =NULL;  
+QueueHandle_t sensor_net_queue  =NULL;
 
 void Gui_Task(){
     TickType_t last_wake_time=xTaskGetTickCount();
@@ -123,10 +133,12 @@ void Gui_Task(){
             // ---- 温度阈值标签 ----
             if (label_tem_value) {
                 lv_label_set_text_fmt(label_tem_value, "%ld", (long)g_temp_threshold);
+                lv_slider_set_value(temp_limit, g_temp_threshold, LV_ANIM_OFF);  
             }
             // ---- 湿度阈值标签 ----
             if (label_hum_value) {
                 lv_label_set_text_fmt(label_hum_value, "%ld", (long)g_humi_threshold);
+                lv_slider_set_value(humi_limit, g_humi_threshold, LV_ANIM_OFF);  
             }
             // ---- 继电器状态 ----
             if (label_home_relay) {
@@ -164,24 +176,26 @@ void Gui_Task(){
 
 void Sensor_Task(){    
     TickType_t last_wake_time=xTaskGetTickCount();
+    sensor_data_t data;
     while(1){
         BH1750_ReadData(&g_light);
         SHT30_Read_Data(&g_temperature,&g_humidity);
+        data.humidity       =   g_humidity;
+        data.temperature    =   g_temperature;
+        data.light          =   g_light;
+        xQueueOverwrite(sensor_gui_queue,&data);
+        xQueueOverwrite(sensor_net_queue,&data);
         vTaskDelayUntil(&last_wake_time,pdMS_TO_TICKS(1000));
     }
 }
 
 void Network_Task(){
     xEventGroupWaitBits(wifi_ev,WIFI_CONNECTED_BIT,pdFALSE,pdTRUE,portMAX_DELAY);
-    OneNET_Start();
-    xEventGroupWaitBits(wifi_ev, MQTT_CONNECT_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
+    xEventGroupWaitBits(wifi_ev,EMQX_CONNECT_BIT,false,true,portMAX_DELAY);
     TickType_t last_wake_time=xTaskGetTickCount();
     while(1){
-        cJSON* property_js=OneNET_Property_Upload();
-        char* data=cJSON_PrintUnformatted(property_js);
-        Connect_Post_Data(data);
-        cJSON_Delete(property_js);
-        cJSON_free(data);    
+        EMQX_Post_Sensor();
+        EMQX_Post_Relay();
         vTaskDelayUntil(&last_wake_time,pdMS_TO_TICKS(1000));
     }
 }
@@ -293,6 +307,8 @@ void Time_Weather_Task(){
 }
 
 void Total_Task(){
+    sensor_gui_queue=xQueueCreate(1,sizeof(sensor_data_t));
+    sensor_net_queue=xQueueCreate(1,sizeof(sensor_data_t));
     xTaskCreate(
         Time_Weather_Task,
         "Time_Weather_Task",

@@ -22,8 +22,6 @@ static const char* TAG ="WIFI_INIT";
 static uint8_t reconnect=0;
 EventGroupHandle_t   wifi_ev;
 
-
-
 esp_netif_t *esp_netif;     //网络接口句柄,指定查询的网络接口
 
 void Wifi_Event_Handler(void* event_handler_arg,esp_event_base_t event_base,int32_t event_id,void* event_data){

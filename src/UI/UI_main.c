@@ -20,7 +20,9 @@ extern EventGroupHandle_t wifi_ev;
 lv_obj_t *label_tem_value   = NULL;
 lv_obj_t *label_hum_value   = NULL;
 lv_obj_t *label_back_value  = NULL;
-lv_obj_t* progress_bar      = NULL;
+lv_obj_t *progress_bar      = NULL;
+lv_obj_t *temp_limit         = NULL;   
+lv_obj_t *humi_limit        = NULL; 
 
 /*===========  Home控制刷新  ============*/
 lv_obj_t *led_wifi          =NULL;
@@ -226,7 +228,7 @@ void UI_Init(void){
 
     /* ---- Setting 页 ---- */
     // 温度阈值
-    lv_obj_t *temp_limit = lv_slider_create(tab_setting);
+    temp_limit = lv_slider_create(tab_setting);
     lv_obj_set_pos(temp_limit, 5, 25);
     lv_obj_set_size(temp_limit, 200, 15);
     lv_slider_set_range(temp_limit, -40, 125);
@@ -240,7 +242,7 @@ void UI_Init(void){
     lv_label_set_text_fmt(label_tem_value, "%ld", (long)g_temp_threshold);
 
     // 湿度阈值
-    lv_obj_t *humi_limit = lv_slider_create(tab_setting);
+    humi_limit = lv_slider_create(tab_setting);
     lv_obj_set_pos(humi_limit, 5, 75);
     lv_obj_set_size(humi_limit, 200, 15);
     lv_slider_set_range(humi_limit, 0, 100);
