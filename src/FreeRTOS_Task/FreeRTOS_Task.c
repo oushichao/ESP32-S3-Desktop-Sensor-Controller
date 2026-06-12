@@ -82,20 +82,21 @@ extern lv_chart_series_t *ser_light;
 extern bool wifi_state;
 extern bool mqtt_state;
 
-typedef struct{
-    float temperature;
-    float humidity;
-    uint16_t light;
-}sensor_data_t;
+
 
 extern QueueHandle_t ota_progress_queue;
 QueueHandle_t sensor_gui_queue  =NULL;  
 QueueHandle_t sensor_net_queue  =NULL;
 
+sensor_data_t gui_data;
+sensor_data_t net_data;
+
 void Gui_Task(){
     TickType_t last_wake_time=xTaskGetTickCount();
     ota_progress_t p_gui;
+
     while(1){
+        xQueueReceive(sensor_gui_queue,&gui_data,0);
         if (lvgl_port_lock(pdMS_TO_TICKS(100))) {
             // ---- 指示灯 ----
             if(led_wifi)Set_Led_Status(led_wifi,wifi_state);
@@ -111,19 +112,19 @@ void Gui_Task(){
             }
             // ---- 温度 ----
             if (current_temp) {
-                int ti = (int)g_temperature;
-                int td = (int)((g_temperature - ti) * 10 + 0.5);
+                int ti = (int)gui_data.temperature;
+                int td = (int)((gui_data.temperature - ti) * 10 + 0.5);
                 lv_label_set_text_fmt(current_temp, "%d.%d", ti, abs(td));
             }
             // ---- 湿度 ----
             if (current_humi) {
-                int hi = (int)g_humidity;
-                int hd = (int)((g_humidity - hi) * 10 + 0.5);
+                int hi = (int)gui_data.humidity;
+                int hd = (int)((gui_data.humidity - hi) * 10 + 0.5);
                 lv_label_set_text_fmt(current_humi, "%d.%d", hi, abs(hd));
             }
             // ---- 光照 ----
             if (current_light) {
-                lv_label_set_text_fmt(current_light, "%u", (unsigned)g_light);
+                lv_label_set_text_fmt(current_light, "%u", (unsigned)gui_data.light);
             }
             // ---- 背光滑块同步 ----
             if (label_back_value) {
@@ -151,17 +152,17 @@ void Gui_Task(){
             }
             // ---- 温度折线图 ----
             if(chart_temp&&ser_tem){
-                lv_chart_set_next_value(chart_temp, ser_tem, (int32_t)(g_temperature*10));
+                lv_chart_set_next_value(chart_temp, ser_tem, (int32_t)(gui_data.temperature * 10));
                 lv_chart_refresh(chart_temp);
             }
             // ---- 湿度折线图 ----
             if(chart_humi&&ser_hum){
-                lv_chart_set_next_value(chart_humi, ser_hum, (int32_t)(g_humidity*10));
+                lv_chart_set_next_value(chart_humi, ser_hum, (int32_t)(gui_data.humidity * 10));
                 lv_chart_refresh(chart_humi);
             }
             // ---- 光强折线图 ----
             if(chart_light&&ser_light){
-                lv_chart_set_next_value(chart_light, ser_light,(int32_t)(g_light));
+                lv_chart_set_next_value(chart_light, ser_light, (int32_t)(gui_data.light));
                 lv_chart_refresh(chart_light);
             }
             //  ---- OTA下载进度 ----
@@ -309,6 +310,15 @@ void Time_Weather_Task(){
 void Total_Task(){
     sensor_gui_queue=xQueueCreate(1,sizeof(sensor_data_t));
     sensor_net_queue=xQueueCreate(1,sizeof(sensor_data_t));
+
+    gui_data.humidity=g_humidity;
+    gui_data.light=g_light;
+    gui_data.temperature=g_temperature;
+
+    net_data.humidity=g_humidity;
+    net_data.light=g_light;
+    net_data.temperature=g_temperature;
+
     xTaskCreate(
         Time_Weather_Task,
         "Time_Weather_Task",
