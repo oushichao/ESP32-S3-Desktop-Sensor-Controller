@@ -12,7 +12,7 @@
 esp_mqtt_client_handle_t  emqx_handle=NULL;
 static const char* TAG="MQEX";
 extern EventGroupHandle_t wifi_ev;
-
+bool config_changed_remote=false;
 /**
  * @brief 订阅服务端平台消息
  */
@@ -57,12 +57,19 @@ void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event
 
     switch ((esp_mqtt_event_id_t)event_id){
         case MQTT_EVENT_CONNECTED:
-            ESP_LOGI(TAG,"EMQT成功连接!!!!");
+            ESP_LOGI(TAG,"EMQX成功连接!!!!");
+            mqtt_state=true;
             EMQX_Subscribe();
             xEventGroupSetBits(wifi_ev,EMQX_CONNECT_BIT);
             break;
+        
+        case MQTT_EVENT_DISCONNECTED:
+            ESP_LOGI(TAG,"EMQX断开连接");
+            mqtt_state=false;
+            break;
 
         case MQTT_EVENT_DATA:{
+            config_changed_remote=true;
             char topic_buf[128]={0},data_buf[128]={0};
             uint16_t topic_len=event->topic_len < 127 ? event->topic_len : 127;
             uint16_t data_len=event->data_len < 127 ? event->data_len : 127;
@@ -78,7 +85,7 @@ void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event
         }
 
         default:
-            ESP_LOGI(TAG,"未知错误 id:%d",event_id);
+            ESP_LOGI(TAG,"其他事件 id:%d",event_id);
             break;
     }
 }

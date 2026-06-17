@@ -7,9 +7,10 @@
 #include "IOT/WIFI_Init/WIFI_Init.h"
 
 static const char* TAG ="NVS";
-nvs_handle  handle;
+
 
 void NVS_Write_Str(char* key,char* str){
+    nvs_handle  handle;
     if(!str||!key)return;
     if(nvs_open("config",NVS_READWRITE,&handle)!=ESP_OK){
         ESP_LOGE(TAG,"[%s]nvs open fail!!!",__func__);
@@ -24,6 +25,7 @@ void NVS_Write_Str(char* key,char* str){
 }
 
 void NVS_Write_int32_t(char* key,int32_t value){
+    nvs_handle  handle;
     if(!key)return;
     if(nvs_open("config",NVS_READWRITE,&handle)!=ESP_OK){
         ESP_LOGE(TAG,"[%s]nvs open fail!!!",__func__);
@@ -38,6 +40,7 @@ void NVS_Write_int32_t(char* key,int32_t value){
 }
 
 void NVS_Write_uint16_t(char* key,uint16_t value){
+    nvs_handle  handle;
     if(!key)return;
     if(nvs_open("config",NVS_READWRITE,&handle)!=ESP_OK){
         ESP_LOGE(TAG,"[%s]nvs open fail!!!",__func__);
@@ -52,6 +55,7 @@ void NVS_Write_uint16_t(char* key,uint16_t value){
 }
 
 void NVS_Write_uint8_t(char* key,uint8_t value){
+    nvs_handle  handle;
     if(!key)return;
     if(nvs_open("config",NVS_READWRITE,&handle)!=ESP_OK){
         ESP_LOGE(TAG,"[%s]nvs open fail!!!",__func__);
@@ -66,6 +70,7 @@ void NVS_Write_uint8_t(char* key,uint8_t value){
 }
 
 void NVS_Read_Config(){
+    nvs_handle  handle;
     nvs_flash_init();
     if(nvs_open("config",NVS_READWRITE,&handle)!=ESP_OK){
         ESP_LOGE(TAG,"nvs open fail!!!");

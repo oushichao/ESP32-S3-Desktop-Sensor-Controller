@@ -82,8 +82,7 @@ extern lv_chart_series_t *ser_light;
 extern bool wifi_state;
 extern bool mqtt_state;
 
-
-
+extern bool config_changed_remote;
 extern QueueHandle_t ota_progress_queue;
 QueueHandle_t sensor_gui_queue  =NULL;  
 QueueHandle_t sensor_net_queue  =NULL;
@@ -91,7 +90,8 @@ QueueHandle_t sensor_net_queue  =NULL;
 sensor_data_t gui_data;
 sensor_data_t net_data;
 
-void Gui_Task(){
+void Gui_Task(void* param){
+    (void)param;
     TickType_t last_wake_time=xTaskGetTickCount();
     ota_progress_t p_gui;
 
@@ -131,16 +131,21 @@ void Gui_Task(){
                 lv_label_set_text_fmt(label_back_value, "%u", (unsigned)backlight);
                 Backlight_Set(backlight);
             }
-            // ---- 温度阈值标签 ----
-            if (label_tem_value) {
-                lv_label_set_text_fmt(label_tem_value, "%ld", (long)g_temp_threshold);
-                lv_slider_set_value(temp_limit, g_temp_threshold, LV_ANIM_OFF);  
+            
+            if(config_changed_remote){
+                // ---- 温度阈值标签 ----
+                if (label_tem_value) {
+                    lv_label_set_text_fmt(label_tem_value, "%ld", (long)g_temp_threshold);
+                    lv_slider_set_value(temp_limit, g_temp_threshold, LV_ANIM_OFF);  
+                }
+                // ---- 湿度阈值标签 ----
+                if (label_hum_value) {
+                    lv_label_set_text_fmt(label_hum_value, "%ld", (long)g_humi_threshold);
+                    lv_slider_set_value(humi_limit, g_humi_threshold, LV_ANIM_OFF);  
+                }
+                config_changed_remote=false;
             }
-            // ---- 湿度阈值标签 ----
-            if (label_hum_value) {
-                lv_label_set_text_fmt(label_hum_value, "%ld", (long)g_humi_threshold);
-                lv_slider_set_value(humi_limit, g_humi_threshold, LV_ANIM_OFF);  
-            }
+
             // ---- 继电器状态 ----
             if (label_home_relay) {
                 lv_label_set_text(label_home_relay, g_relay_state ? "True" : "False");
@@ -175,7 +180,8 @@ void Gui_Task(){
     }
 }
 
-void Sensor_Task(){    
+void Sensor_Task(void* param){    
+    (void)param;
     TickType_t last_wake_time=xTaskGetTickCount();
     sensor_data_t data;
     while(1){
@@ -190,7 +196,8 @@ void Sensor_Task(){
     }
 }
 
-void Network_Task(){
+void Network_Task(void* param){
+    (void)param;
     xEventGroupWaitBits(wifi_ev,WIFI_CONNECTED_BIT,pdFALSE,pdTRUE,portMAX_DELAY);
     xEventGroupWaitBits(wifi_ev,EMQX_CONNECT_BIT,false,true,portMAX_DELAY);
     TickType_t last_wake_time=xTaskGetTickCount();
@@ -201,7 +208,8 @@ void Network_Task(){
     }
 }
 
-void OTA_Task(){
+void OTA_Task(void* param){
+    (void)param;
     xEventGroupWaitBits(wifi_ev, WIFI_CONNECTED_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
 
     while (1){
@@ -288,7 +296,8 @@ void OTA_Task(){
 }
 
 
-void Time_Weather_Task(){
+void Time_Weather_Task(void* param){
+    (void)param;
     xEventGroupWaitBits(wifi_ev, WIFI_CONNECTED_BIT, pdFALSE, pdTRUE, portMAX_DELAY);
     TickType_t last_wake_time=xTaskGetTickCount();
 
@@ -307,7 +316,11 @@ void Time_Weather_Task(){
     }
 }
 
-void Total_Task(){
+
+
+void Total_Task(void* param){
+    BaseType_t ret;
+    (void)param;
     sensor_gui_queue=xQueueCreate(1,sizeof(sensor_data_t));
     sensor_net_queue=xQueueCreate(1,sizeof(sensor_data_t));
 
@@ -319,7 +332,7 @@ void Total_Task(){
     net_data.light=g_light;
     net_data.temperature=g_temperature;
 
-    xTaskCreate(
+    ret=xTaskCreate(
         Time_Weather_Task,
         "Time_Weather_Task",
         TIME_WEATHER_TASK_SIZE,
@@ -327,7 +340,9 @@ void Total_Task(){
         TIME_WEATHER_TASK_PRIO,
         &Time_Weather_Handle
     );
-    xTaskCreate( 
+    configASSERT(ret);
+
+    ret=xTaskCreate( 
         Gui_Task,
         "gui_task",
         GUI_TASK_SIZE,
@@ -335,8 +350,9 @@ void Total_Task(){
         GUI_TASK_PRIO,
         &Gui_Task_Handle
     );
+    configASSERT(ret);
 
-    xTaskCreate( 
+    ret=xTaskCreate( 
         Sensor_Task,
         "sensor_task",
         SENSOR_TASK_SIZE,
@@ -344,8 +360,9 @@ void Total_Task(){
         SENSOR_TASK_PRIO,
         &Sensor_Task_Handle
     );
+    configASSERT(ret);
 
-    xTaskCreate( 
+    ret=xTaskCreate( 
         Network_Task,
         "Network_Task",
         NETWORK_TASK_SIZE,
@@ -353,8 +370,9 @@ void Total_Task(){
         NETWORK_TASK_PRIO,
         &Network_Task_Handle
     );
+    configASSERT(ret);
 
-    xTaskCreate( 
+    ret=xTaskCreate( 
         OTA_Task,
         "OTA_Task",
         OTA_TASK_SIZE,
@@ -362,12 +380,14 @@ void Total_Task(){
         OTA_TASK_PRIO,
         &OTA_Task_Handle
     );
-
+    configASSERT(ret);
     vTaskDelete(NULL);
 }
 
-void Start_FreeROTS_Task(){
-    xTaskCreate( 
+void Start_FreeROTS_Task(void* param){
+    BaseType_t ret;
+    (void)param;
+    ret=xTaskCreate( 
         Total_Task,
         "Total_Task",
         TOTAL_TASK_SIZE,
@@ -375,4 +395,5 @@ void Start_FreeROTS_Task(){
         TOTAL_TASK_PRIO,
         &Total_Task_Handle
     );
+    configASSERT(ret);
 }
