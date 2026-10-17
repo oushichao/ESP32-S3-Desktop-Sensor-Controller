@@ -54,3 +54,6 @@ test/
 config.h
 include/README
 lib/README
+build.log
+compile_commands.json
+dependencies.lock

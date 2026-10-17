@@ -30,6 +30,7 @@ const char* Get_App_Version(){
     }
     return app_version;
 }
+
 /**
  * @brief   执行当前分区的操作,可用于扩展后续的功能
  * @param   vaild 1表示自检通过 固件有效 0表示自检失败 触发回滚
@@ -62,18 +63,29 @@ void OTA_Rollback_Check(){
 
     // 不是待验证状态（如普通启动），直接返回
     if(esp_ota_get_state_partition(running, &ota_state)!=ESP_OK
-       || ota_state != ESP_OTA_IMG_PENDING_VERIFY){
+        || ota_state != ESP_OTA_IMG_PENDING_VERIFY){
         return;
     }
-
     ESP_LOGI(TAG, "检测到待验证的新固件，开始自检...");
 
-    // 自检：等 WiFi 连上，10 秒超时
-    EventBits_t bits = xEventGroupWaitBits(
-        wifi_ev, WIFI_CONNECTED_BIT,
-        pdFALSE, pdTRUE, pdMS_TO_TICKS(10000));
+    vTaskDelay(pdMS_TO_TICKS(3000));
 
-    Set_App_Vaild((bits & WIFI_CONNECTED_BIT) ? 1 : 0);
+    // 获取启动后历史最小空闲堆
+    size_t min_free_heap = xPortGetMinimumEverFreeHeapSize();
+    const size_t HEAP_SAFE_THRESHOLD = 20 * 1024;  // 阈值：20KB，按需修改
+
+    ESP_LOGI(TAG, "历史最小空闲堆: %zu bytes, 安全阈值: %zu bytes", min_free_heap, HEAP_SAFE_THRESHOLD);
+    bool valid = false;
+    if(min_free_heap >= HEAP_SAFE_THRESHOLD){
+        ESP_LOGI(TAG, "自检通过：最低堆充足");
+        valid = true;
+    }
+    else{
+        ESP_LOGE(TAG, "自检失败：历史最低堆小于阈值，疑似内存泄漏，准备回滚");
+        valid = false;
+    }
+
+    Set_App_Vaild(valid);
 }
 
 /* ==================== OTA 下载任务 ==================== */

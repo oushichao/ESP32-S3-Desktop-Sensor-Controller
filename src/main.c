@@ -29,7 +29,7 @@
 #include "IOT/EMQX/EMQX.h"
 
 // pio run -t monitor
-static const char* TAG="mian";
+static const char* TAG="main";
 
 void app_main(){
     setenv("TZ", "CST-8", 1);
@@ -55,7 +55,7 @@ void app_main(){
     lvgl_port_unlock();
     /* ========== 4. WiFi + 回滚检查 ========== */
     Wifi_Sta_Init();
-    OTA_Rollback_Check();   // 等 WiFi 10s 验证固件
+    OTA_Rollback_Check();
     /* ========== 5. EMQX初始化 ========== */
     EMQX_Start();
     /* ========== 5. FreeRTOS 任务 ========== */
