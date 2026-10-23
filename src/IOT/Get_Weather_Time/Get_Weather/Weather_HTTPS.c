@@ -92,32 +92,32 @@ static esp_err_t _http_event_handler(esp_http_client_event_t* evt){
     receive_buf* buf=(receive_buf*)evt->user_data;
     if(!buf)return ESP_FAIL;
     switch (evt->event_id){
-    case HTTP_EVENT_ON_DATA:{
-        size_t need=buf->len+evt->data_len+1;//留给'\0'
-        if(need>buf->cap){
-            size_t new_cap=buf->cap*2;
-            if(new_cap<need)new_cap=need;
-            char* p=realloc(buf->data,new_cap);//扩容
-            if(!p){
-                ESP_LOGE(TAG,"REALLOC FAIL!!!");
-                return ESP_FAIL;
+        case HTTP_EVENT_ON_DATA:{
+            size_t need=buf->len+evt->data_len+1;//留给'\0'
+            if(need>buf->cap){
+                size_t new_cap=buf->cap*2;
+                if(new_cap<need)new_cap=need;
+                char* p=realloc(buf->data,new_cap);//扩容
+                if(!p){
+                    ESP_LOGE(TAG,"REALLOC FAIL!!!");
+                    return ESP_FAIL;
+                }
+                buf->data=p;
+                buf->cap=new_cap;
             }
-            buf->data=p;
-            buf->cap=new_cap;
+            memcpy(buf->data+buf->len,evt->data,evt->data_len);
+            buf->len+=evt->data_len;
+            buf->data[buf->len]='\0';
+            break;
         }
-        memcpy(buf->data+buf->len,evt->data,evt->data_len);
-        buf->len+=evt->data_len;
-        buf->data[buf->len]='\0';
-        break;
-    }
-    case HTTP_EVENT_ON_FINISH:
-        ESP_LOGI(TAG,"HTTP TRANSMIT SUCCESS!!!");
-        break;
-    case HTTP_EVENT_ERROR:
-        ESP_LOGE(TAG,"HTTP EVENT ERROR!!!");
-        break;
-    default:
-        break;
+        case HTTP_EVENT_ON_FINISH:
+            ESP_LOGI(TAG,"HTTP TRANSMIT SUCCESS!!!");
+            break;
+        case HTTP_EVENT_ERROR:
+            ESP_LOGE(TAG,"HTTP EVENT ERROR!!!");
+            break;
+        default:
+            break;
     }
     return ESP_OK;
 }

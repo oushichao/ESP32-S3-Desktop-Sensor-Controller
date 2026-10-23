@@ -242,6 +242,13 @@ void OTA_Task(void* param){
         }
 
         const esp_partition_t *update_part = esp_ota_get_next_update_partition(NULL);
+        if(update_part==NULL){
+            Ota_Send_Progress(0, "No update partitiom");
+            esp_http_client_close(client);
+            esp_http_client_cleanup(client);
+            goto hide_bar_and_retry;            
+        }
+
         esp_ota_handle_t ota_handle;
         err = esp_ota_begin(update_part, OTA_WITH_SEQUENTIAL_WRITES, &ota_handle);
         if (err != ESP_OK) {
@@ -262,7 +269,13 @@ void OTA_Task(void* param){
                 download_ok = false;
                 break;
             }
-            esp_ota_write(ota_handle, buf, rlen);
+            
+            esp_err_t state=esp_ota_write(ota_handle, buf, rlen);
+            if(state!=ESP_OK){
+                download_ok = false;
+                break;                
+            }
+
             total_read += rlen;
 
             int pct = (int)((long long)total_read * 100 / content_len);
@@ -277,20 +290,31 @@ void OTA_Task(void* param){
         esp_http_client_cleanup(client);
 
         if (download_ok) {
-            esp_ota_end(ota_handle);
+            esp_err_t state=esp_ota_end(ota_handle);
+            if(state!=ESP_OK){
+                goto hide_bar_and_retry;
+            }
             Ota_Send_Progress(100, "Update complete");
-            esp_ota_set_boot_partition(update_part);
+            state=esp_ota_set_boot_partition(update_part);
+            if(state!=ESP_OK){
+                goto hide_bar_and_retry;
+            }
             vTaskDelay(pdMS_TO_TICKS(1000));
             esp_restart();      // 重启
         }
         else{
-            esp_ota_end(ota_handle);
+            esp_err_t state=esp_ota_abort(ota_handle);
+            if(state!=ESP_OK){
+                goto hide_bar_and_retry;
+            }
         }
 
     hide_bar_and_retry:
         // 隐藏进度条，退回循环顶部继续等 BIT2
         lvgl_port_lock(portMAX_DELAY);
-        lv_obj_add_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
+        if(progress_bar){
+            lv_obj_add_flag(progress_bar, LV_OBJ_FLAG_HIDDEN);
+        }
         lvgl_port_unlock();
     }
 }
@@ -315,7 +339,6 @@ void Time_Weather_Task(void* param){
         vTaskDelayUntil(&last_wake_time,pdMS_TO_TICKS(3600*1000));
     }
 }
-
 
 
 void Total_Task(void* param){
